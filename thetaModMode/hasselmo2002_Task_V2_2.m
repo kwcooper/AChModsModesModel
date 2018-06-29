@@ -1,112 +1,128 @@
-function [] = hasselmo2002_Task_firstPass()
+function [] = hasselmo2002_Task_V2_2()
 % hasselmo_2002 theta model
-% runtime parameters
- 
-% params
-nTrls = 14;
-nTSteps = 25;
-nCA1cells = 2;
-nCA3cells = 3;
-nECcells = 2;
 
-dt = 0.005; % 5 ms
-thF = 8; % 8 Hz
-stepsPerCycle = ceil(((1/thF)/dt));
-phaseStep = (2*pi)/stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
-k = .5; 
-lrate = 0.01; % learning rate, per Ehren's experiment
-thetaScale = 1; % X from Hasselmo et al (2002), p 799
+
+%todo: 
+% add plots for ca3 and ec activity
+% add ach to the model
+% make a struct to hold data? 
+
+clear all;
+
+%% runtime parameters
+p.nTrls = 14;
+p.nTSteps = 25;
+p.nCA1cells = 2;
+p.nCA3cells = 3;
+p.nECcells = 2;
+
+p.dt = 0.005; % 5 ms
+p.thF = 8; % 8 Hz
+p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
+p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
+p.k = .5; 
+p.lrate = 0.01; % learning rate, per Ehren's experiment
+p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 % [0 to 1] smaller means theta has less effect on functional strength
 % paper is vague about whether different values are used for the different
 % layers (CA3 vs EC), for now we'll assume that it is a single fixed
 % parameter.
 
 % allocate arrays
-a_CA1 = nan(nCA1cells,nTSteps);
-a_CA3 = nan(nCA3cells,nTrls); 
-a_EC  = nan(nECcells, nTrls);
-w_CA3 = zeros(nCA1cells, nCA3cells);
-w_EC  = eye(nCA1cells, nECcells); % identity matrix p.801
-tempXprod = nan(nCA1cells,nCA3cells,stepsPerCycle);
+a.CA1 = nan(p.nCA1cells,p.nTSteps);
+a.CA3 = nan(p.nCA3cells,p.nTrls); 
+a.EC  = nan(p.nECcells, p.nTrls);
+w.CA3 = zeros(p.nCA1cells, p.nCA3cells);
+w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
+tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
+
+
+
+%% Task 
 
 stage = 1;
 
-for trl = 1:nTrls
+% for each trial, run the theta model 
+for trl = 1:p.nTrls
   % initialize first timestep
   % NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
-  a_CA3(:,1) = [0; 1; 1]; % rand(nCA3cells,1) > .5;
-  a_EC(:,1)  = [0; 1]; % rand(nECcells, 1) > .5;
+  a.CA3(:,1) = [0; 1; 1]; % rand(p.nCA3cells,1) > .5;
+  a.EC(:,1)  = [0; 1]; % rand(p.nECcells, 1) > .5;
   
-  [a_CA1, tempXprod, phase_EC, phase_CA3, phase_LTP, theta_EC, theta_CA3, theta_LTP] = runTheta(a_EC, a_CA3, a_CA1, tempXprod, w_EC, w_CA3, stage, nTSteps, stepsPerCycle, phaseStep, thetaScale);
+  % runs the model 
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
   
   % compute weight updates after each theta cycle
-  dw_CA3(:,:) = sum(tempXprod,3);
+  dw.CA3(:,:) = sum(tempXprod,3);
   
   fprintf('\nTrial %i\n',trl);
-  if any(isnan(dw_CA3)), keyboard, end
-  w_CA3, dw_CA3
-  w_CA3 = w_CA3 + lrate.*dw_CA3; %   w_CA3 = w_CA3 + dw_CA3;
-  w_CA3 = min(w_CA3, k);  
-  w_CA3
+  if any(isnan(dw.CA3)), keyboard, end
+  w.CA3, dw.CA3
+  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
+  w.CA3 = min(w.CA3, p.k);
+  w.CA3
   
 end
 
-if 1, plotStateVariables(theta_EC, theta_CA3,a_CA1,theta_LTP); end
+if 1, plotStateVariables(theta,a); end
 
   keyboard
 
   fprintf('Test initial learning\n');  
-  a_CA3(:,1) = [0; 1; 0]; % rand(nCA3cells,1) > .5;
-  [a_CA1, tempXprod, phase_EC, phase_CA3, phase_LTP, theta_EC, theta_CA3, theta_LTP] = runTheta(a_EC, a_CA3, a_CA1,tempXprod, w_EC, w_CA3, stage, nTSteps, stepsPerCycle, phaseStep, thetaScale); 
-  if 1, plotStateVariables(theta_EC, theta_CA3,a_CA1,theta_LFP); end
+  a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
+  if 1, plotStateVariables(theta,a); end
   
 end
 
-function [a_CA1,tempXprod, phase_EC, phase_CA3, phase_LTP, theta_EC, theta_CA3, theta_LTP] = runTheta(a_EC, a_CA3, a_CA1,tempXprod, w_EC, w_CA3, stage, nTSteps, stepsPerCycle, phaseStep, thetaScale)
-
-  phase_EC = nan(nTSteps,1);   theta_EC = nan(nTSteps,1);
-  phase_CA3 = nan(nTSteps,1);  theta_CA3 = nan(nTSteps,1);
-  phase_LTP = nan(nTSteps,1);  theta_LTP = nan(nTSteps,1);
-
-
-  phase_EC(1)  = 0;    theta_EC(1)  = (thetaScale/2) * sin(phase_EC(1))  + (1-(thetaScale/2));
-  phase_CA3(1) = pi;   theta_CA3(1) = (thetaScale/2) * sin(phase_CA3(1)) + (1-(thetaScale/2));
-  phase_LTP(1) = 0;    theta_LTP(1) = sin(phase_LTP(1));
+function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
   
-  a_CA1(:,1) = ((theta_EC(1) .* w_EC) * a_EC(:,stage)) + ((theta_CA3(1) .* w_CA3) * a_CA3(:,1)); % eq 2.4 p.799
+  % allocate phase and theta params
+  ph.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
+  ph.CA3 = nan(p.nTSteps,1);  theta.CA3 = nan(p.nTSteps,1);
+  ph.LTP = nan(p.nTSteps,1);  theta.LTP = nan(p.nTSteps,1);
+
   
-  tempXprod(:,:,1) = (theta_LTP(1) .* a_CA1(:,1)) * a_CA3(:,stage)';
+  ph.EC(1)  = 0;    theta.EC(1)  = (p.thetaScale/2) * sin(ph.EC(1))  + (1-(p.thetaScale/2));
+  ph.CA3(1) = pi;   theta.CA3(1) = (p.thetaScale/2) * sin(ph.CA3(1)) + (1-(p.thetaScale/2));
+  ph.LTP(1) = 0;    theta.LTP(1) = sin(ph.LTP(1));
+  
+  % initialize CA1 activity
+  a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
+  
+  tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
   % run one theta cycle
-  for t = 2:stepsPerCycle
+  for t = 2:p.stepsPerCycle
     
     % phasic input
-    phase_EC(t)  = phase_EC(t-1)  + phaseStep;  theta_EC(t)  = (thetaScale/2) * sin(phase_EC(t))  + (1-(thetaScale/2));  % eq 2.2 p.799
-    phase_CA3(t) = phase_CA3(t-1) + phaseStep;  theta_CA3(t) = (thetaScale/2) * sin(phase_CA3(t)) + (1-(thetaScale/2));  % eq 2.3 p.799
-    phase_LTP(t) = phase_LTP(t-1) + phaseStep;  theta_LTP(t) = sin(phase_LTP(t));                      % eq 2.5 p.799
+    ph.EC(t)  = ph.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(ph.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
+    ph.CA3(t) = ph.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(ph.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
+    ph.LTP(t) = ph.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(ph.LTP(t));                                        % eq 2.5 p.799
     
     
-    %a_CA1 = w_EC .* a_EC + w_CA3 .* a_CA3; % eq 2.1
-    a_CA1(:,t) = ((theta_EC(t) .* w_EC) * a_EC(:,stage)) + ((theta_CA3(t) .* w_CA3) * a_CA3(:,stage)); % eq 2.4 p.799
+    %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
+    a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
     
-    tempXprod(:,:,t) = (theta_LTP(t) .* a_CA1(:,t)) * a_CA3(:,stage)';
+    tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
+    
   end
   
 end
 
-function plotStateVariables(theta_EC, theta_CA3,a_CA1,theta_LFP)
+function plotStateVariables(theta,a)
     figure;
     subplot(3,1,1);
-    hold off; plot(theta_EC)
-    hold on; plot(theta_CA3)
-    ylabel('theta_CA3');
+    hold off; plot(theta.EC)
+    hold on; plot(theta.CA3)
+    ylabel('theta.CA3');
     legend('EC','CA3'); ylim([0 1]);
     title(['End of training']);
     
     subplot(3,1,2);
-    plot(a_CA1');
+    plot(a.CA1');
     ylabel('act CA1');
     
     subplot(3,1,3);
-    plot(theta_LTP)
+    plot(theta.LTP)
     ylabel('theta LTP');
 end
