@@ -1,4 +1,4 @@
-function [] = hasselmo9402()
+function [] = hasselmo9402_v1()
 % hasselmo_2002 theta model
 
 
@@ -76,50 +76,47 @@ if 1, plotStateVariables(theta,a); end
 end
 
 function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
-
+  
   % allocate phase and theta params
   ph.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
   ph.CA3 = nan(p.nTSteps,1);  theta.CA3 = nan(p.nTSteps,1);
   ph.LTP = nan(p.nTSteps,1);  theta.LTP = nan(p.nTSteps,1);
 
-
+  
   ph.EC(1)  = 0;    theta.EC(1)  = (p.thetaScale/2) * sin(ph.EC(1))  + (1-(p.thetaScale/2));
   ph.CA3(1) = pi;   theta.CA3(1) = (p.thetaScale/2) * sin(ph.CA3(1)) + (1-(p.thetaScale/2));
   ph.LTP(1) = 0;    theta.LTP(1) = sin(ph.LTP(1));
+  
+  % initialize CA1 activity
+  %a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
+  nCycles = 6;
+  AChLvls = linspace(0,1,nCycles*p.stepsPerCycle);
+  syn.EC3(:,1) = (1 - AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
+  syn.CA3(:,1) = (1 - AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
+  
+  a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
 
-  AChLvls = [0:0.2:1]; Cr = 1; Cl = 1;
-  for ACh_i = 1:size(AChLvls)
-    % initialize CA1 activity
-    a(ACh_i).CA1(:,1) = ((theta.EC(1) .* w.EC) * a(ACh_i).EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a(ACh_i).CA3(:,1)); % eq 2.4 p.799
-
-    tempXprod(:,:,1) = (theta.LTP(1) .* a(ACh_i).CA1(:,1)) * a(ACh_i).CA3(:,stage)';
-    % run one theta cycle
-    for t = 2:p.stepsPerCycle
-
-      % phasic input
-      ph.EC(t)  = ph.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(ph.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
-      ph.CA3(t) = ph.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(ph.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
-      ph.LTP(t) = ph.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(ph.LTP(t));                                        % eq 2.5 p.799
-
-
-      %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
-      syn(ACh_i).EC3(:,t) = (1 - AChLvls(ACh_i)*Cl) * ((theta.EC(t) .* w.EC) * a(ACh_i).EC(:,stage));
-      syn(ACh_i).CA3(:,t) = (1 - AChLvls(ACh_i)*Cr) * ((theta.CA3(t) .* w.CA3) * a(ACh_i).CA3(:,stage));
-      
-      a(ACh_i).CA1(:,t) = syn(ACh_i).EC3(:,t) + syn(ACh_i).CA3(:,t); % eq 2.4 p.799
-
-      tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a(ACh_i).CA3(:,stage)';
-
-    end % t
-  end % ACh_i
- 
-  if 0
+  tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
+  % run one theta cycle
+  for t = 2:nCycles*p.stepsPerCycle
     
-  figure;
-  
-  
+    % phasic input
+    ph.EC(t)  = ph.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(ph.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
+    ph.CA3(t) = ph.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(ph.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
+    ph.LTP(t) = ph.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(ph.LTP(t));                                        % eq 2.5 p.799
+    
+    
+    %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
+    %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
+    syn.EC3(:,t) = (1 - AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
+    syn.CA3(:,t) = (1 - AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
+    
+    a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
+
+    tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
+    
   end
-  keyboard
+  
 end
 
 function plotStateVariables(theta,a)
