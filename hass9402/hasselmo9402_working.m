@@ -8,6 +8,7 @@ function [] = hasselmo9402_working()
 % make a struct to hold data? 
 
 clear all;
+dbstop if error;
 
 %% runtime parameters
 p.nTrls = 14;
@@ -20,7 +21,7 @@ p.dt = 0.005; % 5 ms
 p.thF = 8; % 8 Hz
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
-p.k = .5; 
+p.k = .5; % max ltp 
 p.lrate = 0.01; % learning rate, per Ehren's experiment
 p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 % [0 to 1] smaller means theta has less effect on functional strength
@@ -49,8 +50,8 @@ for trl = 1:p.nTrls
   a.CA3(:,1) = [0; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 1]; % rand(p.nECcells, 1) > .5;
   
-  % runs the model 
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
+  % run the model 
+  [a, tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage);
   
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
@@ -58,41 +59,41 @@ for trl = 1:p.nTrls
   fprintf('\nTrial %i\n',trl);
   if any(isnan(dw.CA3)), keyboard, end
   w.CA3, dw.CA3
-  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
+  w.CA3 = w.CA3 + p.lrate .* dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
   w.CA3 = min(w.CA3, p.k);
   w.CA3
   
 end
 
-if 1, plotStateVariables(theta,a); end
+if 1, plotStateVariables(theta,a,pha); end
 
   keyboard
 
   fprintf('Test initial learning\n');  
   a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a); end
+  [a, tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage); 
+  if 1, plotStateVariables(theta,a,pha); end
   
 end
 
-function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
+function [a,tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage)
   
   % allocate phase and theta params
-  ph.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
-  ph.CA3 = nan(p.nTSteps,1);  theta.CA3 = nan(p.nTSteps,1);
-  ph.LTP = nan(p.nTSteps,1);  theta.LTP = nan(p.nTSteps,1);
+  pha.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
+  pha.CA3 = nan(p.nTSteps,1);  theta.CA3 = nan(p.nTSteps,1);
+  pha.LTP = nan(p.nTSteps,1);  theta.LTP = nan(p.nTSteps,1);
 
   
-  ph.EC(1)  = 0;    theta.EC(1)  = (p.thetaScale/2) * sin(ph.EC(1))  + (1-(p.thetaScale/2));
-  ph.CA3(1) = pi;   theta.CA3(1) = (p.thetaScale/2) * sin(ph.CA3(1)) + (1-(p.thetaScale/2));
-  ph.LTP(1) = 0;    theta.LTP(1) = sin(ph.LTP(1));
+  pha.EC(1)  = 0;    theta.EC(1)  = (p.thetaScale/2) * sin(pha.EC(1))  + (1-(p.thetaScale/2));
+  pha.CA3(1) = pi;   theta.CA3(1) = (p.thetaScale/2) * sin(pha.CA3(1)) + (1-(p.thetaScale/2));
+  pha.LTP(1) = 0;    theta.LTP(1) = sin(pha.LTP(1));
   
   % initialize CA1 activity
   %a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
   nCycles = 6;
-  AChLvls = linspace(1,0,nCycles*p.stepsPerCycle); Cr = 1; Cl = 1; % high ach to low ach
-  syn.EC3(:,1) = (1 - AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
-  syn.CA3(:,1) = (1 - AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
+  pha.AChLvls = linspace(1,0,nCycles*p.stepsPerCycle); Cr = 1; Cl = 1; % high ach to low ach
+  syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
+  syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
   
   a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
 
@@ -101,45 +102,61 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
   for t = 2:nCycles*p.stepsPerCycle
     
     % phasic input
-    ph.EC(t)  = ph.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(ph.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
-    ph.CA3(t) = ph.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(ph.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
-    ph.LTP(t) = ph.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(ph.LTP(t));                                        % eq 2.5 p.799
+    pha.EC(t)  = pha.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(pha.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
+    pha.CA3(t) = pha.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(pha.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
+    pha.LTP(t) = pha.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(pha.LTP(t));                                            % eq 2.5 p.799
     
     
     %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
     %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
-    syn.EC3(:,t) = (AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
-    syn.CA3(:,t) = (1 - AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
+    syn.EC3(:,t) = (pha.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
+    syn.CA3(:,t) = (1 - pha.AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
     a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
 
     tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
     
   end
-  keyboard
-  figure; hold on;
-  plot(reshape(syn.EC3,2,[])'); 
-  plot(reshape(syn.CA3,2,[])')
   
- 
+  modEC = reshape(syn.EC3,2,[])';
+  modCA3 = reshape(syn.CA3,2,[])';
+  
+  if 0
+    keyboard
+    
+    figure; hold on;
+    time = linspace(0, 1000, size(reshape(syn.EC3,2,[])',1));
+    plot(time,modEC);
+    plot(time,modCA3);
+    xlim([0,max(time)]);
+    
+    figure;
+    plot(time, modEC+modCA3)
+    
+  end
+  
 end
 
-function plotStateVariables(theta,a)
+function plotStateVariables(theta,a,pha)
     figure;
-    subplot(3,1,1);
+    subplot(4,1,1);
     hold off; plot(theta.EC)
     hold on; plot(theta.CA3)
     ylabel('theta.CA3');
     legend('EC','CA3'); ylim([0 1]);
     title(['End of training']);
     
-    subplot(3,1,2);
+    subplot(4,1,2);
     plot(a.CA1');
     ylabel('act CA1');
     
-    subplot(3,1,3);
+    subplot(4,1,3);
     plot(theta.LTP)
     ylabel('theta LTP');
+    
+    subplot(4,1,4);
+    plot(pha.AChLvls)
+    ylabel('Ach');
 end
 
 %%
