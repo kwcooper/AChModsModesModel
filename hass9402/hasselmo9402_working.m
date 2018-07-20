@@ -11,23 +11,24 @@ clear all;
 dbstop if error;
 
 %% runtime parameters
-p.nTrls = 14;
+p.nTrls = 10;
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
 p.nECcells = 2;
 
-p.dt = 0.005; % 5 ms
-p.thF = 8; % 8 Hz
+p.dt = 0.005; % Default = 5 ms
+p.thF = 8; % Default = 8 Hz
+p.nCycles = 6; % How many cycles would we like per trial. Default = 6? 
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
-p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
-p.k = .5; % max ltp 
+p.phaseStep = (2*pi)/p.stepsPerCycle; % number of radians to increment theta phase by for each time steps
+p.k = .5; % Max synaptic growth. Default = .5
 p.lrate = 0.01; % learning rate, per Ehren's experiment
-p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
+p.thetaScale = 1; % X from Hasselmo et al. 2002, p 799
 % [0 to 1] smaller means theta has less effect on functional strength
 % paper is vague about whether different values are used for the different
 % layers (CA3 vs EC), for now we'll assume that it is a single fixed
-% parameter.
+% parameter. Default = 1?
 
 % allocate arrays
 a.CA1 = nan(p.nCA1cells,p.nTSteps);
@@ -50,33 +51,35 @@ for trl = 1:p.nTrls
   a.CA3(:,1) = [0; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 1]; % rand(p.nECcells, 1) > .5;
   
-  % run the model 
-  [a, tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage);
+  % run the model
+  [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
   
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
   fprintf('\nTrial %i\n',trl);
-  if any(isnan(dw.CA3)), keyboard, end
+  if any(isnan(dw.CA3)), keyboard, end % Just in case something goes wrong...
   w.CA3, dw.CA3
   w.CA3 = w.CA3 + p.lrate .* dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
   w.CA3 = min(w.CA3, p.k);
-  w.CA3
+  %w.CA3
   
 end
 
 if 1, plotStateVariables(theta,a,pha); end
 
-  keyboard
+%keyboard
 
-  fprintf('Test initial learning\n');  
-  a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
-  [a, tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,pha); end
-  
+fprintf('Test initial learning\n');
+a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
+[a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
+if 1, plotStateVariables(theta,a,pha); end
+
+
+keyboard;
 end
 
-function [a,tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage)
+function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   
   % allocate phase and theta params
   pha.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
@@ -90,8 +93,9 @@ function [a,tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage)
   
   % initialize CA1 activity
   %a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
-  nCycles = 6;
-  pha.AChLvls = linspace(1,0,nCycles*p.stepsPerCycle); Cr = 1; Cl = 1; % high ach to low ach
+  %p.nCycles = 10;
+  pha.AChLvls = linspace(1,0,p.nCycles*p.stepsPerCycle); % add acetylcholine
+  Cr = 1; Cl = 1; % These need to be updated to control for individual dynamics in CA3 vs EC 
   syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
   syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
   
@@ -99,7 +103,7 @@ function [a,tempXprod, pha, theta] = runTheta(a,tempXprod,w,p,stage)
 
   tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
   % run one theta cycle
-  for t = 2:nCycles*p.stepsPerCycle
+  for t = 2:p.nCycles*p.stepsPerCycle
     
     % phasic input
     pha.EC(t)  = pha.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(pha.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
