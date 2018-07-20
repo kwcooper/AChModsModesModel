@@ -11,7 +11,7 @@ clear all;
 dbstop if error;
 
 %% runtime parameters
-p.nTrls = 10;
+p.nTrls = 2;
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
@@ -42,25 +42,41 @@ tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 
 %% Task 
 
-% 
+%       CA3      EC
+% T1:  1 1 0    1 0
+% T2:  0 1 1    0 1
+% Ch:  0 0 1     ?    should be 0 1  not 1 0... 
+% Ch2: 0 1 0     ?    Will it be 1 1?
 
+% NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
+%a.CA3(:,1) = rand(p.nCA3cells,1) > .5;
+%a.EC(:,1)  = rand(p.nECcells, 1) > .5;
 
-stage = 1;
+a.CA3(:,1) = [1; 1; 0]; 
+a.EC(:,1)  = [1; 0]; 
 
+a.CA3(:,2) = [0; 1; 1]; 
+a.EC(:,2)  = [0; 1]; 
+
+a.CA3(:,3) = [0; 0; 1;]; 
+
+% TD simply setting these to 1,2,3 won't work, should allocate them to
+% spaced parts at steps of p.nCycles*p.stepsPerCycle?
+%%
+stage = 1; 
 % for each trial, run the theta model 
 for trl = 1:p.nTrls
   % initialize first timestep
-  % NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
-  a.CA3(:,1) = [1; 1; 0]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1)  = [1; 0]; % rand(p.nECcells, 1) > .5;
+  fprintf('\nTrial %i\n',trl);
   
+  stage = trl; % TD: Fix this
   % run the model
   [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
   
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
-  fprintf('\nTrial %i\n',trl);
+  
   if any(isnan(dw.CA3)), keyboard, end % Just in case something goes wrong...
   w.CA3, dw.CA3
   w.CA3 = w.CA3 + p.lrate .* dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
@@ -69,14 +85,17 @@ for trl = 1:p.nTrls
   
 end
 
+% TD: make plot parameter
 if 1, plotStateVariables(theta,a,pha); end
 
 %keyboard
 
-fprintf('Test initial learning\n');
-a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
+fprintf('Test Phase\n');
+trl = 3;
+stage = trl; 
 [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
 if 1, plotStateVariables(theta,a,pha); end
+
 
 
 keyboard;
@@ -149,13 +168,13 @@ function plotStateVariables(theta,a,pha)
     subplot(4,1,1);
     hold off; plot(theta.EC)
     hold on; plot(theta.CA3)
-    ylabel('theta.CA3');
+    ylabel('theta');
     legend('EC','CA3'); ylim([0 1]);
     title(['End of training']);
     
     subplot(4,1,2);
     plot(a.CA1');
-    ylabel('act CA1');
+    ylabel('Act CA1');
     
     subplot(4,1,3);
     plot(theta.LTP)
@@ -163,7 +182,7 @@ function plotStateVariables(theta,a,pha)
     
     subplot(4,1,4);
     plot(pha.AChLvls)
-    ylabel('Ach');
+    ylabel('ACh');
 end
 
 %%
