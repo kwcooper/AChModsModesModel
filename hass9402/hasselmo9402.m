@@ -92,7 +92,7 @@ keyboard
 a.CA3(:,1) = [1; 0; 0]; 
 a.EC(:,1)  = [0; 0]; 
 
-fprintf('Test Phase\n');
+fprintf('Test Phase\n'); 
 %trl = 3;
 %stage = trl; 
 [a, tempXprod, pha, syn, theta] = runTheta(a,w,tempXprod,p,stage);
