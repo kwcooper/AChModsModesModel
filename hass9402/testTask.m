@@ -6,13 +6,15 @@
 % T2:  0 1 1    0 1
 % Ch:  0 0 1     ?    should be 0 1  not 1 0... yes
 % Ch2: 0 1 0     ?    Will it be 1 1? yes
+
+
 %%
 
 w(:,:,1) = zeros(2,3);
 
 % Trial 1
 CA3(:,1) = [0;1;1]; 
-EC(:,1)  = [0;1]; 
+EC(:,1)  = [0;1];  
 
 % learning  
 w(:,:,2) = w(:,:,1) + (EC(:,1) * CA3(:,1)');
@@ -37,7 +39,7 @@ EC(:,3) + w(:,:,3) * CA3(:,3);
 EC(:,4) + w(:,:,3) * CA3(:,4);
 
 %%
-% Test accurasy measurement
+% Test accuracy measurement
 a = [3 1 1];
 b = [0 0 0];
 %sqrt(1^2 + 1^2 + 0^2) hardcode norm
