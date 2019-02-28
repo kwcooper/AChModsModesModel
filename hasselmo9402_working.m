@@ -101,8 +101,13 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   AchPut = linspace(-10,10,p.nCycles*p.stepsPerCycle);
   pha.AChLvls = sigmoid(AchPut);
   Cr = 1; Cl = 1; % These need to be updated to control for individual dynamics in CA3 vs EC 
-  syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
-  syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
+  updateEC3 = @(ACh,Cl,theta,w,a) (1 - ACh*Cl) * ((theta.*w) * a);
+  updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
+  
+  syn.EC3(:,1) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
+  syn.CA3(:,1) = updateEC3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
+%  syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage)); % fix one minus
+%  syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
   
   a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
 
@@ -114,6 +119,7 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
     pha.EC(t)  = pha.EC(t-1)  + p.phaseStep;  theta.EC(t)  = (p.thetaScale/2) * sin(pha.EC(t))  + (1-(p.thetaScale/2));  % eq 2.2 p.799
     pha.CA3(t) = pha.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(pha.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
     pha.LTP(t) = pha.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(pha.LTP(t));                                            % eq 2.5 p.799
+    
     
     
     %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
