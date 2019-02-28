@@ -3,9 +3,15 @@ function [] = hasselmo9402_working()
 
 
 %todo: 
-% add plots for ca3 and ec activity
-% add ach to the model
-% make a struct to hold data? 
+% add plots for ca3 and ec activity - done
+% add ach to the model - done
+% make a struct to hold data? - done
+
+% can we get EC and CA3 activity separated?
+% Learning? - simple vector forgeting? TMaze? 
+% OLM switch? 
+% show that hasselmo is wrong
+% add the anon funct to other areas
 
 clear all;
 dbstop if error;
@@ -76,11 +82,11 @@ if 1, plotStateVariables(theta,a,pha); end
 fprintf('Test initial learning\n');
 a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
 [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
-if 1, plotStateVariables(theta,a,pha); ends
-s
+if 1, plotStateVariables(theta,a,pha); end
 
 keyboard;
 end 
+
 
 function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   
@@ -101,14 +107,16 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   AchPut = linspace(-10,10,p.nCycles*p.stepsPerCycle);
   pha.AChLvls = sigmoid(AchPut);
   Cr = 1; Cl = 1; % These need to be updated to control for individual dynamics in CA3 vs EC 
-  updateEC3 = @(ACh,Cl,theta,w,a) (1 - ACh*Cl) * ((theta.*w) * a);
+  updateEC3 = @(ACh,Cl,theta,w,a) (ACh*Cl) * ((theta.*w) * a);
   updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
   
-  syn.EC3(:,1) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
-  syn.CA3(:,1) = updateEC3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
+  % after new updating func
 %  syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage)); % fix one minus
 %  syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
   
+  syn.EC3(:,1) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
+  syn.CA3(:,1) = updateCA3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
+
   a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
 
   tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
@@ -120,14 +128,17 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
     pha.CA3(t) = pha.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(pha.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
     pha.LTP(t) = pha.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(pha.LTP(t));                                            % eq 2.5 p.799
     
-    
-    
     %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
     %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
-
+    
+    % after the new updating function was written
     syn.EC3(:,t) = (pha.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
     syn.CA3(:,t) = (1 - pha.AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
+    % why does this break it?
+%     syn.EC3(:,t) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
+%     syn.CA3(:,t) = updateCA3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
+%     
     a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
 
     tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
