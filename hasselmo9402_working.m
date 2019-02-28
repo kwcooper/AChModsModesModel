@@ -76,11 +76,11 @@ if 1, plotStateVariables(theta,a,pha); end
 fprintf('Test initial learning\n');
 a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
 [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
-if 1, plotStateVariables(theta,a,pha); end
-
+if 1, plotStateVariables(theta,a,pha); ends
+s
 
 keyboard;
-end
+end 
 
 function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   
