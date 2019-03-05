@@ -106,7 +106,7 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   %pha.AChLvls = linspace(1,0,p.nCycles*p.stepsPerCycle); % add acetylcholine (linear)
   AchPut = linspace(-10,10,p.nCycles*p.stepsPerCycle);
   pha.AChLvls = sigmoid(AchPut);
-  Cr = 1; Cl = 1; % These need to be updated to control for individual dynamics in CA3 vs EC 
+  Cr = 1; Cl = .5; % These need to be updated to control for individual dynamics in CA3 vs EC 
   updateEC3 = @(ACh,Cl,theta,w,a) (ACh*Cl) * ((theta.*w) * a);
   updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
   
@@ -171,7 +171,7 @@ function plotStateVariables(theta,a,pha)
     hold on; plot(theta.CA3)
     ylabel('theta.CA3');
     legend('EC','CA3'); ylim([0 1]);
-    title(['End of training']);
+    %title(['End of training']);
     
     subplot(4,1,2);
     plot(a.CA1');
