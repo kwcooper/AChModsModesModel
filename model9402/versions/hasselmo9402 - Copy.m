@@ -1,4 +1,4 @@
-function [] = hasselmo2002_Task_V2_2()
+function [] = hasselmo9402()
 % hasselmo_2002 theta model
 
 
@@ -42,15 +42,6 @@ tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 
 stage = 1;
 
-
-fprintf('Probe (pre- task)\n');  
-a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-a.EC(:,1) = [0; 0];
-[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-if 1, plotStateVariables(theta,a,'PRE PROBE'); end
-
-
-
 % for each trial, run the theta model 
 for trl = 1:p.nTrls
   % initialize first timestep
@@ -58,85 +49,30 @@ for trl = 1:p.nTrls
   a.CA3(:,1) = [0; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 1]; % rand(p.nECcells, 1) > .5;
   
-  
   % runs the model 
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
-  disp('CA1 Activity');
-  a.CA1
-  a.CA1(1:2,end)
+  
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
   fprintf('\nTrial %i\n',trl);
   if any(isnan(dw.CA3)), keyboard, end
-  %w.CA3, dw.CA3
+  w.CA3, dw.CA3
   w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
   w.CA3 = min(w.CA3, p.k);
-  %w.CA3
-  
+  w.CA3
   
 end
 
-%if 1, plotStateVariables(theta,a); end
+if 1, plotStateVariables(theta,a); end
 
-  %keyboard
+  keyboard
 
   fprintf('Test initial learning\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 1];
+  a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'TEST'); end
+  if 1, plotStateVariables(theta,a); end
   
- 
-  fprintf('post task probe\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'RET'); end
-
-%% 
-keyboard;
-% for each trial, run the theta model 
-for trl = 1:p.nTrls
-  % initialize first timestep
-  % NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
-  a.CA3(:,1) = [1; 1; 0]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1)  = [1; 0]; % rand(p.nECcells, 1) > .5;
-  
-  
-  % runs the model 
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
-  disp('CA1 Activity');
-  a.CA1
-  a.CA1(1:2,end)
-  % compute weight updates after each theta cycle
-  dw.CA3(:,:) = sum(tempXprod,3);
-  
-  fprintf('\nTrial %i\n',trl);
-  if any(isnan(dw.CA3)), keyboard, end
-  %w.CA3, dw.CA3
-  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
-  w.CA3 = min(w.CA3, p.k);
-  %w.CA3
-  
-  
-end
-  
-  fprintf('Test initial learning\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [1; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'TEST 2'); end
-  
- 
-  fprintf('post task probe\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'RET 2'); end
-  
-  
-  keyboard;
 end
 
 function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
@@ -173,14 +109,14 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
   
 end
 
-function plotStateVariables(theta,a,t)
+function plotStateVariables(theta,a)
     figure;
     subplot(3,1,1);
     hold off; plot(theta.EC)
     hold on; plot(theta.CA3)
     ylabel('theta.CA3');
     legend('EC','CA3'); ylim([0 1]);
-    title(['Plot: ', t]);
+    title(['End of training']);
     
     subplot(3,1,2);
     plot(a.CA1');
@@ -190,3 +126,5 @@ function plotStateVariables(theta,a,t)
     plot(theta.LTP)
     ylabel('theta LTP');
 end
+
+%%
