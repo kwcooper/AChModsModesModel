@@ -1,16 +1,14 @@
-function [] = hasselmo2002_Task_V2_2()
+function [] = hasselmo2002_Task_V3()
 % hasselmo_2002 theta model
 
 
 %todo: 
-% add plots for ca3 and ec activity
-% add ach to the model
-% make a struct to hold data? 
+% build saddle plot
 
 clear all;
 
 %% runtime parameters
-p.nTrls = 14;
+p.nTrls = 30; % what does this mean? 
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
@@ -21,7 +19,7 @@ p.thF = 8; % 8 Hz
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
 p.k = .5; 
-p.lrate = 0.01; % learning rate, per Ehren's experiment
+p.lrate = 0.01; % learning rate, per Ehren's suggested experiment
 p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 % [0 to 1] smaller means theta has less effect on functional strength
 % paper is vague about whether different values are used for the different
@@ -36,7 +34,7 @@ w.CA3 = zeros(p.nCA1cells, p.nCA3cells);
 w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 
-
+verbose = 0;
 
 %% Task 
 
@@ -49,6 +47,8 @@ a.EC(:,1) = [0; 0];
 [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
 if 1, plotStateVariables(theta,a,'PRE PROBE'); end
 
+disp('SCORE:')
+score(a)
 
 
 % for each trial, run the theta model 
@@ -61,13 +61,18 @@ for trl = 1:p.nTrls
   
   % runs the model 
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
-  disp('CA1 Activity');
-  a.CA1
-  a.CA1(1:2,end)
+  
+  if verbose
+    disp('CA1 Activity');
+    a.CA1
+    a.CA1(1:2,end)
+  end
+  
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
-  fprintf('\nTrial %i\n',trl);
+  
+  if verbose fprintf('\nTrial %i\n',trl); end
   if any(isnan(dw.CA3)), keyboard, end
   %w.CA3, dw.CA3
   w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
@@ -75,27 +80,40 @@ for trl = 1:p.nTrls
   %w.CA3
   
   
+%   disp('SCORE:')
+%   score(a)
+
+
 end
 
 %if 1, plotStateVariables(theta,a); end
 
-  %keyboard
+%keyboard
 
-  fprintf('Test initial learning\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 1];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'TEST'); end
+fprintf('Test initial learning\n');  
+a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+a.EC(:,1) = [0; 1];
+[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
+if 1, plotStateVariables(theta,a,'TEST'); end
+
+disp('SCORE:')
+score(a)
+
+fprintf('post task probe\n');  
+a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+a.EC(:,1) = [0; 0];
+[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
+if 1, plotStateVariables(theta,a,'RET'); end
+
+
+disp('SCORE:')
+score(a)
+
+   
   
- 
-  fprintf('post task probe\n');  
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-  if 1, plotStateVariables(theta,a,'RET'); end
+%% Phase Two
 
-%% 
-keyboard;
+%keyboard;
 % for each trial, run the theta model 
 for trl = 1:p.nTrls
   % initialize first timestep
@@ -106,9 +124,13 @@ for trl = 1:p.nTrls
   
   % runs the model 
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage);
-  disp('CA1 Activity');
-  a.CA1
-  a.CA1(1:2,end)
+  
+  if verbose
+    disp('CA1 Activity');
+    a.CA1
+    a.CA1(1:2,end)
+  end
+  
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
@@ -119,7 +141,9 @@ for trl = 1:p.nTrls
   w.CA3 = min(w.CA3, p.k);
   %w.CA3
   
-  
+%   disp('SCORE:')
+%   score(a)
+
 end
   if 1, plotStateVariables(theta,a,'RET LRNING 2'); end
   
@@ -130,13 +154,18 @@ end
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
   if 1, plotStateVariables(theta,a,'TEST 2'); end
   
- 
+  
+  disp('SCORE:')
+  score(a)
+
   fprintf('post task probe\n');  
   a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1) = [0; 0];
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
   if 1, plotStateVariables(theta,a,'RET 2'); end
   
+  disp('SCORE:')
+  score(a)
   
   keyboard;
 end
@@ -173,6 +202,12 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
     
   end
   
+end
+
+function [M] = score(a)
+% Scores the CA1 output
+CA1_A = mean(a.CA1,2);
+M = (CA1_A(1) - CA1_A(2)) / (CA1_A(1) + CA1_A(2)); 
 end
 
 function plotStateVariables(theta,a,t)
