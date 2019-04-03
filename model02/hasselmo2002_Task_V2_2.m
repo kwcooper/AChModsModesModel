@@ -5,7 +5,6 @@ function [] = hasselmo2002_Task_V2_2()
 %todo: 
 % add plots for ca3 and ec activity
 % add ach to the model
-% make a struct to hold data? 
 
 clear all;
 
