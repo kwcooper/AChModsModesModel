@@ -1,52 +1,70 @@
 function hasselmo2002_Task_V3_saddle()
 % hasselmo_2002 theta model
 tic
-N = 50; % 50 @ 48 seconds
+N = 20; % 50 @ 48 seconds
 saddleMat = nan(N,N);
 X_CA3 = linspace(0,2*pi,N);
 X_EC = linspace(0,2*pi,N);
 
-i = 1;
-j = 1;
-for EC_TP = X_EC
-  j = 1;
-  for CA3_TP = X_CA3
-    saddleMat(i,j) = runOne(EC_TP, CA3_TP);
-    j = j + 1;
+figure;   nTrls = [1 2 3 4]; %[1 2 3 4]
+for nTrl_i = 1:length(nTrls)
+  nTrls_P = nTrls(nTrl_i);
+  %runOne(X_EC(1), X_CA3(N/2), nTrls_P);
+  
+  fprintf('%i:',length(X_EC));
+  for i = 1:length(X_EC)
+    EC_TP = X_EC(i);
+    fprintf(' %i',find(EC_TP==X_EC));
+    for j = 1:length(X_CA3)
+      CA3_TP = X_CA3(j);
+      [saddleMat(j,i), Ms(:,j,i)] = runOne(EC_TP, CA3_TP, nTrls_P);
+    end
   end
-  i = i + 1;
-end
+  fprintf('\n');
 
-figure;
-imagesc(saddleMat)
-xlabel('EC');
-ylabel('CA3');
-xlim([0 2*pi])
-ylim([0 2*pi])
 
-figure; 
+% figure;
+% imagesc(saddleMat)
+% xlabel('EC');
+% ylabel('CA3');
+% xlim([0 2*pi])
+% ylim([0 2*pi])  
+% 
+% figure; 
 [X,Y] = meshgrid(X_EC,X_CA3);
-surf(X,Y,saddleMat)
-title('Performance Measure')
-xlabel('Phase EC');
-ylabel('Phase CA3');
-zlabel('M');
-xlim([0 2*pi])
-ylim([0 2*pi])
+% surf(X,Y,saddleMat)
+% title('Performance Measure')
+% xlabel('Phase EC');
+% ylabel('Phase CA3');
+% zlabel('M');
+% xlim([0 2*pi])
+% ylim([0 2*pi])
+
+%figure(99); 
+nR = 5; nC = 4; 
+subplotbyind(nR,nC,1,nTrl_i); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);title(['trls = ' num2str(nTrls_P)]);
+subplotbyind(nR,nC,2,nTrl_i); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nR,nC,3,nTrl_i); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nR,nC,4,nTrl_i); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nR,nC,5,nTrl_i); surf(X,Y,squeeze(Ms(5,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+
+end
 
 toc
-keyboard;
+keyboard; 
 end
 
 
-function [Mhat] = runOne(EC_TP, CA3_TP)
+function [Mhat,Ms] = runOne(EC_TP, CA3_TP, nTrls_P)
 %todo: 
 % build saddle plot
-
+runMidTests = true; %DONT TURN THIS OFF!
 %clear all;
 
 %% runtime parameters
-p.nTrls = 30; % what does this mean? 
+p.nTrls_trn = 1 + 0; % what does this mean?; THis grows this exponentally
+p.nTrls_ext = 1 + 2; % what does this mean?; THis grows this exponentally
+p.nTrls_rev = 1 + nTrls_P; % what does this mean?; THis grows this exponentally
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
@@ -56,8 +74,9 @@ p.dt = 0.005; % 5 ms
 p.thF = 8; % 8 Hz
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
-p.k = .5; 
-p.lrate = 0.01; % learning rate, per Ehren's suggested experiment
+p.k = 4;
+p.k2 = -4;
+p.lrate = 0.02; % learning rate, per Ehren's suggested experiment
 p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 % [0 to 1] smaller means theta has less effect on functional strength
 % paper is vague about whether different values are used for the different
@@ -66,9 +85,9 @@ p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 
 % allocate arrays
 a.CA1 = nan(p.nCA1cells,p.nTSteps);
-a.CA3 = nan(p.nCA3cells,p.nTrls); 
-a.EC  = nan(p.nECcells, p.nTrls);
-w.CA3 = zeros(p.nCA1cells, p.nCA3cells);
+a.CA3 = nan(p.nCA3cells); 
+a.EC  = nan(p.nECcells);
+w.CA3 = 0 .* ones(p.nCA1cells, p.nCA3cells);
 w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 
@@ -78,23 +97,23 @@ plt = 0;
 
 
 
-%% Task 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%              Task                %%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stage = 1;
-
-
-% fprintf('Probe (pre- task)\n');  
-% a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-% a.EC(:,1) = [1; 0];
-% [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-% if plt, plotStateVariables(theta,a,'PRE PROBE'); end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%         Initial training             %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % for each trial, run the theta model 
-for trl = 1:p.nTrls
+tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
+for trl = 1:p.nTrls_trn
   % initialize first timestep
   % NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+  a.CA3(:,1) = [1; 1; 0;]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1) = [1; 0];
   
   
@@ -113,40 +132,26 @@ for trl = 1:p.nTrls
   
   if any(isnan(dw.CA3)), keyboard, end
   %w.CA3, dw.CA3
-  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
-  w.CA3 = min(w.CA3, p.k);
-  %w.CA3
-  
-  
-%   disp('SCORE:')
-%   score(a)
-
-
+  w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 end
 
-if plt, plotStateVariables(theta,a,'Initial Learning'); end
-%keyboard
-
-% fprintf('Test initial learning\n');  
-% a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-% a.EC(:,1) = [0; 1];
-% [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-% if plt, plotStateVariables(theta,a,'TEST'); end
-% disp(['SCORE:', num2str(score(a))])
-
-% fprintf('post task probe\n');  
-% a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-% a.EC(:,1) = [0; 0];
-% [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-% if plt, plotStateVariables(theta,a,'RET'); end
-% disp(['SCORE:', num2str(score(a))])
-
+if runMidTests
+a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+a.EC(:,1) = [0; 0];
+[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+if plt, figure(43); plotStateVariables(theta,a,'Initial Learning'); end
+end
+if plt, figure(42); plotStateVariables(theta,a,'Initial Learning'); end
+Ms(1) = score(a,[1 0]');
    
 %% Phase Two
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%         Extinction training             %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%keyboard;
 % for each trial, run the theta model 
-for trl = 1:p.nTrls
+tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
+for trl = 1:p.nTrls_ext
   a.CA3(:,1) = [1; 1; 0]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 0]; % rand(p.nECcells, 1) > .5;
   
@@ -166,22 +171,27 @@ for trl = 1:p.nTrls
   
   
   if any(isnan(dw.CA3)), keyboard, end
-  %w.CA3, dw.CA3
-  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
-  w.CA3 = min(w.CA3, p.k);
-  %w.CA3
-  
-%   disp('SCORE:')
-%   score(a)
-
+  w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 end
-  if plt, plotStateVariables(theta,a,'Error Reversal'); end 
+
+if runMidTests
+a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+a.EC(:,1) = [0; 0];
+[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+end
+if plt, figure(54); plotStateVariables(theta,a,'Error Reversal'); end
+Ms(2) = score(a,[1 0]');
+Ms(3) = score(a,[0 1]');
 
 %% Phase Three
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%         Reversal training             %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %keyboard;
 % for each trial, run the theta model 
-for trl = 1:p.nTrls
+tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
+for trl = 1:p.nTrls_rev
   a.CA3(:,1) = [0; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 1]; % rand(p.nECcells, 1) > .5;
   
@@ -199,47 +209,19 @@ for trl = 1:p.nTrls
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
   
-  
   if any(isnan(dw.CA3)), keyboard, end
-  %w.CA3, dw.CA3
-  w.CA3 = w.CA3 + p.lrate.*dw.CA3; %   w.CA3 = w.CA3 + dw.CA3;
-  w.CA3 = min(w.CA3, p.k);
-  %w.CA3
-  
-%   disp('SCORE:')
-%   score(a)
+  w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 
 end
-  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-  
-
-%   fprintf('Test initial learning\n');  
-%   a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-%   a.EC(:,1) = [1; 0];
-%   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-%   if plt, plotStateVariables(theta,a,'TEST 2'); end
-%   disp(['SCORE:', num2str(score(a))])
-% 
-%   fprintf('post task probe\n');  
-%   a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-%   a.EC(:,1) = [0; 0];
-%   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage); 
-%   if plt, plotStateVariables(theta,a,'RET 2'); end
-%   disp(['SCORE:', num2str(score(a))])
-
-  %fprintf('post task probe\n');  
+if runMidTests
   a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage); 
-  if plt, plotStateVariables(theta,a,'Choice'); end
-  %disp(['SCORE:', num2str(score(a))])
-  
-  
-  Mhat = score(a);
-  
-  %keyboard;
-  
-  
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+end
+Ms(4) = score(a,[1 0]');
+Ms(5) = score(a,[0 1]');
+Mhat = score(a,[0 1]');  
   
   
 end
@@ -255,12 +237,13 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage)
 
   
   ph.EC(1)  = EC_TP;   theta.EC(1)  = (p.thetaScale/2) * sin(ph.EC(1))  + (1-(p.thetaScale/2));
-  ph.CA3(1) = CA3_TP;   theta.CA3(1) = (p.thetaScale/2) * sin(ph.CA3(1)) + (1-(p.thetaScale/2));
-  ph.LTP(1) = 0;    theta.LTP(1) = sin(ph.LTP(1));
+  ph.CA3(1) = CA3_TP;  theta.CA3(1) = (p.thetaScale/2) * sin(ph.CA3(1)) + (1-(p.thetaScale/2));
+  ph.LTP(1) = 0;       theta.LTP(1) = sin(ph.LTP(1)); 
   
   % initialize CA1 activity
   a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
   
+  %if any(a.CA1<0); keyboard; end
   tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
   % run one theta cycle
   for t = 2:p.stepsPerCycle
@@ -280,14 +263,28 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage)
   
 end
 
-function [M] = score(a)
+function wCA3 = update_wCA3(wCA3,dwCA3,p)
+  wCA3 = wCA3 + p.lrate.*dwCA3;
+  wCA3 = min(wCA3,p.k);
+  wCA3 = max(wCA3,p.k2);
+end
+
+function [M] = score(a,TARG)
 % Scores the CA1 output
-CA1_A = mean(a.CA1,2);
-M = (CA1_A(1) - CA1_A(2)) / (CA1_A(1) + CA1_A(2)); 
+vers = 2;
+switch(vers)
+  case 1
+    CA1_A = mean(a.CA1,2);
+    Ma = (CA1_A(1) - CA1_A(2));% / (CA1_A(1) + CA1_A(2));
+    Mt = TARG(1) - TARG(2);
+    M = Ma/Mt;
+  case 2
+    M = max(TARG'*a.CA1 - (1-TARG)' * a.CA1);
+end
+% M = sum(TARG - CA1_A);
 end
 
 function plotStateVariables(theta,a,t)
-    figure;
     subplot(3,1,1);
     hold off; plot(theta.EC)
     hold on; plot(theta.CA3)
