@@ -6,7 +6,9 @@ saddleMat = nan(N,N);
 X_CA3 = linspace(0,2*pi,N);
 X_EC = linspace(0,2*pi,N);
 
-figure;   nTrls = [1 2 3 4]; %[1 2 3 4]
+figure('position', [1 1 1043 788]);   
+
+nTrls = [1 2 3 4]; %[1 2 3 4]
 for nTrl_i = 1:length(nTrls)
   nTrls_P = nTrls(nTrl_i);
   %runOne(X_EC(1), X_CA3(N/2), nTrls_P);
@@ -41,12 +43,12 @@ for nTrl_i = 1:length(nTrls)
 % ylim([0 2*pi])
 
 %figure(99); 
-nR = 5; nC = 4; 
+nR = 4; nC = 4; 
 subplotbyind(nR,nC,1,nTrl_i); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);title(['trls = ' num2str(nTrls_P)]);
 subplotbyind(nR,nC,2,nTrl_i); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 subplotbyind(nR,nC,3,nTrl_i); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 subplotbyind(nR,nC,4,nTrl_i); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
-subplotbyind(nR,nC,5,nTrl_i); surf(X,Y,squeeze(Ms(5,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+%subplotbyind(nR,nC,5,nTrl_i); surf(X,Y,squeeze(Ms(5,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 
 end
 
@@ -63,8 +65,9 @@ runMidTests = true; %DONT TURN THIS OFF!
 
 %% runtime parameters
 p.nTrls_trn = 1 + 0; % what does this mean?; THis grows this exponentally
-p.nTrls_ext = 1 + 2; % what does this mean?; THis grows this exponentally
-p.nTrls_rev = 1 + nTrls_P; % what does this mean?; THis grows this exponentally
+p.nTrls_ext = 1 + 0; % what does this mean?; THis grows this exponentally
+p.nTrls_rev = 0 + nTrls_P; % what does this mean?; THis grows this exponentally
+
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
@@ -74,7 +77,7 @@ p.dt = 0.005; % 5 ms
 p.thF = 8; % 8 Hz
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
-p.k = 4;
+p.k = 20;
 p.k2 = -4;
 p.lrate = 0.02; % learning rate, per Ehren's suggested experiment
 p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
@@ -220,7 +223,8 @@ if runMidTests
   if plt, plotStateVariables(theta,a,'Correct Reversal'); end
 end
 Ms(4) = score(a,[1 0]');
-Ms(5) = score(a,[0 1]');
+%Ms(5) = score(a,[0 1]');
+
 Mhat = score(a,[0 1]');  
   
   
@@ -266,7 +270,7 @@ end
 function wCA3 = update_wCA3(wCA3,dwCA3,p)
   wCA3 = wCA3 + p.lrate.*dwCA3;
   wCA3 = min(wCA3,p.k);
-  wCA3 = max(wCA3,p.k2);
+  %wCA3 = max(wCA3,p.k2);
 end
 
 function [M] = score(a,TARG)
