@@ -64,7 +64,7 @@ runMidTests = true; %DONT TURN THIS OFF!
 %clear all;
 
 %% runtime parameters
-p.nTrls_trn = 0; % what does this mean?; THis grows this exponentally
+p.nTrls_trn = 1; % what does this mean?; THis grows this exponentally
 p.nTrls_ext = 0; % what does this mean?; THis grows this exponentally
 p.nTrls_rev = nTrls_P; % what does this mean?; THis grows this exponentally
 
@@ -73,7 +73,7 @@ p.nCA3cells = 3;
 p.nECcells = 2;
 
 p.dt = 0.005; % 5 ms
-p.thF = 1; % 8 Hz
+p.thF = 8; % 8 Hz
 p.stepsPerCycle = ceil(((1/p.thF)/p.dt));
 p.nTSteps = p.stepsPerCycle;
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
@@ -81,7 +81,7 @@ p.k = 1;
 p.k2 = 1;
 p.lrate = 0; %0.02; % learning rate, per Ehren's suggested experiment
 p2 = p; 
-p2.lrate = 1; % copy for the acc updates
+p2.lrate = 8; % copy for the acc updates
 
 p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 % [0 to 1] smaller means theta has less effect on functional strength
@@ -93,7 +93,7 @@ p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 a.CA1 = nan(p.nCA1cells,p.nTSteps);
 a.CA3 = nan(p.nCA3cells); 
 a.EC  = nan(p.nECcells);
-w.CA3 = 0 .* ones(p.nCA1cells, p.nCA3cells);
+w.CA3 = ones(p.nCA1cells, p.nCA3cells); % .* 0 
 w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 dwAccE.CA3 = zeros(2,3);
@@ -113,7 +113,7 @@ plt = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stage = 1;
-if 0
+if false
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%         Initial training             %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,8 +154,8 @@ if plt, figure(43); plotStateVariables(theta,a,'Initial Learning'); end
 end
 if plt, figure(42); plotStateVariables(theta,a,'Initial Learning'); end
 end
-%ilW = p.k2;
-%w.CA3 = [ilW ilW 0; 0 0 0];
+ilW = p.k2;
+w.CA3 = [ilW ilW 0; 0 0 0];
 w.CA3_init = w.CA3;
 Ms(1) = score(a,[0 1]');
 
