@@ -2,44 +2,98 @@
 
 % task
 
-% Learn left arm
-a.EC_1  = [1 0];
-a.CA3_1 = [1 1 0];
-w.EC_1 = eye(2, 2);
-w.CA3_1 = 0 .* ones(3,2);
+K = 1;
+
+%% Learn left arm (n)
+a.EC.n  = [1 0];
+a.CA3.n = [1 .5 0]; %[1 1 0];
+w.EC.n = eye(2, 2);
+w.CA3.n = K * a.CA3.n'* a.EC.n; % eq (2.8) % 0 .* ones(3,2);
 
 % Activation % CA1 = [1 0]
-a.CA1_1 = a.EC_1 * w.EC_1 + a.CA3_1 * w.CA3_1;
+a.CA1.n = a.EC.n * w.EC.n + a.CA3.n * w.CA3.n; % eq (2.1)
 
-
-% Error
-a.EC_2  = [0 0];
-a.CA3_2 = [1 1 0];
-w.EC_2 = eye(2, 2);
-w.CA3_2 = w.CA3_1 +  a.CA3_1' .* a.CA1_1;    
-
-% Activation % CA1 = [0 1]
-a.CA1_2 = a.EC_2 * w.EC_2 + a.CA3_2 * w.CA3_2;
-
-
-% Correct Reversal
-a.EC_3  = [0 1];
-a.CA3_3 = [0 1 1];
-w.EC_3 = eye(2, 2);
-w.CA3_3 = w.CA3_2 +  a.CA3_2' .* a.CA1_2;  
+% does a.CA1.n == a.EC.n? 
+ 
+%% Error (e)
+a.EC.e  = [0 0];
+a.CA3.e = [.5 1 0];
+w.EC.e = eye(2, 2);
+w.CA3.e = w.CA3.n +  a.CA3.n' .* a.CA1.n;    
 
 % Activation % CA1 = [0 1]
-a.CA1_3 = a.EC_3 * w.EC_3 + a.CA3_3 * w.CA3_3;
+a.CA1.e = a.EC.e * w.EC.e + a.CA3.e * w.CA3.e;
 
 
-% Test
-a.EC_4  = [0 0];
-a.CA3_4 = [1 1 1];
-w.EC_4 = eye(2, 2);
-w.CA3_4 = w.CA3_3 +  a.CA3_3' .* a.CA1_3;
+%% Correct Reversal (c)
+a.EC.c  = [0 1];
+a.CA3.c = [0 1 1];
+w.EC.c = eye(2, 2);
+w.CA3.c = w.CA3.e +  a.CA3.e' .* a.CA1.e;  
 
 % Activation % CA1 = [0 1]
-a.CA1_4 = a.EC_4 * w.EC_4 + a.CA3_4 * w.CA3_4;
+a.CA1.c = a.EC.c * w.EC.c + a.CA3.c * w.CA3.c;
+
+
+%% Test (r)
+a.EC.r  = [0 0];
+a.CA3.r = [1 1 1];
+w.EC.r = eye(2, 2);
+w.CA3.r = w.CA3.c +  a.CA3.c' .* a.CA1.c;
+
+% Activation % CA1 = [0 1]
+a.CA1.r = a.EC.r * w.EC.r + a.CA3.r * w.CA3.r;
+
+
+%% Scratchpad
+
+% pg 802 2. 
+a.CA3.n * a.CA3.e';     % should equal 1
+[1 .5 0] * [.5 1 0]';   %
+
+% pg 802 3. 
+a.CA3.n * a.CA3.c';     % should equal 0 
+[.5 .5 0] * [0 .5 .5]';
+[0 .25 .25] * [.25 .25 0]';
+a.CA3.e * a.CA3.c';     % should equal 0 
+a.EC.c * a.EC.n';       % should equal 0
+a.EC.c * a.EC.c';       % should equal 1
+a.EC.n * a.EC.n';       % should equal 1
+
+
+% pg 804 2.4
+a.CA3.n * a.CA3.r;      % should equal 1
+a.CA3.c * a.CA3.r;      % should equal 1
+%[q1 q2 0] * [.5 1 0]' == 1 && [] * []' == 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
