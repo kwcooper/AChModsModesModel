@@ -27,20 +27,19 @@ for part = iter
         p.CA3 = X_CA3(j);
         p.LTP = X_EC(i);
         X = 1; % X = K = 1 % this should change the amplitude of the preformance measure
-        K = 5; % see above
+        K = 1; % see above
 
         switch(part)
             case 1
-                saddleMats(j,i,part) = X/2 * pi * cos(X_EC(i));
-                
+                saddleMats(j,i,part) = X/2 * pi * cos(X_EC(i)) - K - (X/2) * pi * cos(X_CA3(j)); % eq. 2.14 (with phase shifts)
+        %saddleMat(j,i) = X/2 * pi * cos(p.LTP - p.EC) - K - (X/2) * pi * cos(p.LTP - p.CA3); % eq. 2.14
             case 2 
-                saddleMats(j,i,part) = - K - (X/2) * pi * cos(X_CA3(j));
-                %saddleMat(j,i) = - K - (X/2) * pi * cos(X_CA3(j));
+                
+                saddleMats(j,i,part) = - K - (X/2) * pi * cos(X_EC(j));
 
             case 3
-                saddleMats(j,i,part) = X/2 * pi * cos(X_EC(i)) - K - (X/2) * pi * cos(X_CA3(j)); % eq. 2.14 (with phase shifts)
-                 %saddleMat(j,i) = X/2 * pi * cos(p.LTP - p.EC) - K - (X/2) * pi * cos(p.LTP - p.CA3); % eq. 2.14
-                
+                saddleMats(j,i,part) = - K - (X/2) * pi * cos(X_EC(j));
+                %saddleMat(j,i) = - K - (X/2) * pi * cos(X_CA3(j));
         end 
 
       end
@@ -51,17 +50,14 @@ for part = iter
 end
 
 figure;
-names = ["EC Part", "CA3 part", "Whole F(x)"];
-for sPi = iter
+names = ['']
+for sPi = flip(iter)
     subplot(1,length(iter),sPi);
-    [X,Y] = meshgrid(rad2deg(X_EC),rad2deg(X_CA3));
+    [X,Y] = meshgrid(X_EC,X_CA3);
     surf(X,Y,saddleMats(:,:,sPi)); 
     xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M')
-    title(names(sPi)); 
-    view([45 60]); 
-    xlim([0 360]); ylim([0 360]);
-    xticks([0 180 360]); yticks([0 180 360]);
-    %xlim([0 2*pi]); ylim([0 2*pi]);
+    %title('Performance vs phase shift')
+    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
     colormap('winter')
 end
 
