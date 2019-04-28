@@ -47,6 +47,7 @@ a.CA1.r = a.EC.r * w.EC.r + a.CA3.r * w.CA3.r;
 
 %% Scratchpad
 
+if 0
 % pg 802 2. 
 a.CA3.n * a.CA3.e';     % should equal 1
 [1 .5 0] * [.5 1 0]';   %
@@ -66,7 +67,7 @@ a.CA3.n * a.CA3.r;      % should equal 1
 a.CA3.c * a.CA3.r;      % should equal 1
 %[q1 q2 0] * [.5 1 0]' == 1 && [] * []' == 0
 
-
+end
 
 
 

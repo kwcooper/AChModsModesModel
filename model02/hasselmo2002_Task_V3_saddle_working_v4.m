@@ -1,4 +1,4 @@
-function hasselmo2002_Task_V3_saddle()
+function hasselmo2002_Task_V3_saddle_working_v4()
 % hasselmo_2002 theta model
 tic
 N = 20; % 50 @ 48 seconds
