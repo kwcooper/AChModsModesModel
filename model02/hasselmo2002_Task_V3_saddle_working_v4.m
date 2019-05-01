@@ -52,6 +52,13 @@ subplotbyind(nR,nC,4,nTrl_i); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylab
 %figure;surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 end
 
+if 0
+    figure;
+    surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
+    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title([' Model Stage 4 / Test']);
+    colormap('winter')
+end
+    
 toc
 keyboard; 
 end

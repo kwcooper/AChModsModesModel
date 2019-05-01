@@ -6,12 +6,13 @@ saddleMat = nan(N,N);
 X_CA3 = linspace(0,2*pi,N);
 X_EC = linspace(0,2*pi,N);
 
+runTest = 0;
 %figure('position', [1 1 1043 788]);   
 
 nTrls = [5]; %[1 2 3 4]
 for nTrl_i = 1:length(nTrls)
   nTrls_P = nTrls(nTrl_i);
-  runOne(X_EC(N/2), X_CA3(1), nTrls_P);
+  if runTest; runOne(X_EC(N/2), X_CA3(1), nTrls_P); end
   
   fprintf('%i:',length(X_EC));
   for i = 1:length(X_EC)
@@ -44,12 +45,17 @@ for nTrl_i = 1:length(nTrls)
 
 figure%(99); 
 nR = 4; nC = length(nTrls); 
-subplotbyind(nR,nC,1,nTrl_i); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);title(['trls = ' num2str(nTrls_P)]);
-subplotbyind(nR,nC,2,nTrl_i); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
-subplotbyind(nR,nC,3,nTrl_i); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
-subplotbyind(nR,nC,4,nTrl_i); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nC,nR,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 1']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,2); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 2']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,3); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 3']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter');
 
 %figure;surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+end
+
+if 0
+    figure; surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
+    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter'); 
 end
 
 toc
@@ -230,46 +236,44 @@ Ms(3) = score(a,[0 1]');
 dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
 w.CA3 = update_wCA3(w.CA3,dwAccE.CA3,p2);
 
-if runMidTests
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+a.EC(:,1) = [0; 0];
+[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+
+Ms(4) = score(a,[0 1]'); 
+
+
+if 0
+    % apply accumulated weight changes
+    dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
+    w.CA3 = update_wCA3(w.CA3,dwAccR.CA3,p2);
+
+    if runMidTests
+      a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+      a.EC(:,1) = [0; 0];
+      [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+      if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+    end
+    Ms(3) = score(a,[0 1]');
+
+
+
+    % apply accumulated weight changes
+    dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
+    w.CA3 = update_wCA3(w.CA3,dwAcc.CA3,p2);
+
+    if runMidTests
+      a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+      a.EC(:,1) = [0; 0];
+      [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+      if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+    end
+    Ms(4) = score(a,[0 1]');
 end
-Ms(2) = score(a,[0 1]');
-
-
-
-% apply accumulated weight changes
-dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
-w.CA3 = update_wCA3(w.CA3,dwAccR.CA3,p2);
-
-if runMidTests
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-end
-Ms(3) = score(a,[0 1]');
-
-
-
-
-% apply accumulated weight changes
-dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
-w.CA3 = update_wCA3(w.CA3,dwAcc.CA3,p2);
-
-if runMidTests
-  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-  a.EC(:,1) = [0; 0];
-  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-end
-Ms(4) = score(a,[0 1]');
 
 Mhat = score(a,[0 1]');  
 
-keyboard;
 end
 
 
@@ -320,7 +324,6 @@ end
 
 function [M] = score(a,TARG)
 % Scores the CA1 output
-keyboard;
 vers = 3;
 switch(vers)
   case 1
