@@ -8,8 +8,8 @@ X_EC = linspace(0,2*pi,N);
 
 runTest = 0;
 %figure('position', [1 1 1043 788]);   
-
-nTrls = [5]; %[1 2 3 4]
+figure;
+nTrls = [2,4,6,8]; %[1 2 3 4]
 for nTrl_i = 1:length(nTrls)
   nTrls_P = nTrls(nTrl_i);
   if runTest; runOne(X_EC(N/2), X_CA3(1), nTrls_P); end
@@ -43,14 +43,18 @@ for nTrl_i = 1:length(nTrls)
 % xlim([0 2*pi])
 % ylim([0 2*pi])
 
-figure%(99); 
 nR = 4; nC = length(nTrls); 
-subplotbyind(nR,nC,1,nTrl_i); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);title(['trls = ' num2str(nTrls_P)]);
-subplotbyind(nR,nC,2,nTrl_i); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
-subplotbyind(nR,nC,3,nTrl_i); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
-subplotbyind(nR,nC,4,nTrl_i); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nC,nR,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 1']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,2); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 2']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,3); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 3']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter');
 
 %figure;surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+end
+
+if 0
+    figure; surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
+    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter'); 
 end
 
 toc
