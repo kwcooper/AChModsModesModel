@@ -1,4 +1,4 @@
-function [] = hasselmo9402_working()
+function [] = hasselmo9402_working_addedPlots()
 % hasselmo_2002 theta model
 
 
@@ -35,6 +35,7 @@ p.thetaScale = 1; % X from Hasselmo et al. 2002, p 799
 % paper is vague about whether different values are used for the different
 % layers (CA3 vs EC), for now we'll assume that it is a single fixed
 % parameter. Default = 1?
+p.time = linspace(0,1,p.nCycles*p.stepsPerCycle);
 
 % allocate arrays
 a.CA1 = nan(p.nCA1cells,p.nTSteps);
@@ -61,7 +62,7 @@ for trl = 1:p.nTrls
   a.EC(:,1)  = [1; 0]; % rand(p.nECcells, 1) > .5;
   
   % run the model
-  [a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
+  [a, tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage);
   
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3);
@@ -73,40 +74,38 @@ for trl = 1:p.nTrls
   w.CA3 = min(w.CA3, p.k);
   %w.CA3
   
-  if trl == p.nTrls, plotStateVariables(theta,a,pha, trl); end
+  %if trl == p.nTrls, plotStateVariables(theta,a,pha, trl); end
   
 end
 
 
 
-%keyboard
 
 fprintf('Test initial learning\n');
 a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
-[a, tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage);
+[a, tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage);
 trl = 0;
-if 0, plotStateVariables(theta,a,pha, trl); end
+if 1
+    plotStateVariables(theta,a,pha, trl,p.time); 
+    plotRegionAct(syn.EC3(1,:), syn.CA3(2,:),p.time);
+end
 
 keyboard;
 end 
 
 
-function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
+function [a,tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage)
   
   % allocate phase and theta params
   pha.EC = nan(p.nTSteps,1);   theta.EC = nan(p.nTSteps,1);
   pha.CA3 = nan(p.nTSteps,1);  theta.CA3 = nan(p.nTSteps,1);
   pha.LTP = nan(p.nTSteps,1);  theta.LTP = nan(p.nTSteps,1);
-
   
   pha.EC(1)  = 0;    theta.EC(1)  = (p.thetaScale/2) * sin(pha.EC(1))  + (1-(p.thetaScale/2));
   pha.CA3(1) = pi;   theta.CA3(1) = (p.thetaScale/2) * sin(pha.CA3(1)) + (1-(p.thetaScale/2));
   pha.LTP(1) = 0;    theta.LTP(1) = sin(pha.LTP(1));
   
-  % initialize CA1 activity
-  %a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
-  %p.nCycles = 10;
-  %pha.AChLvls = linspace(1,0,p.nCycles*p.stepsPerCycle); % add acetylcholine (linear)
+  % initialize ACh activity
   AchPut = linspace(-10,10,p.nCycles*p.stepsPerCycle);
   pha.AChLvls = sigmoid(AchPut);
   % .64 C_theta (equ 5) Cr = .8 Cl = ? 
@@ -114,13 +113,10 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   updateEC3 = @(ACh,Cl,theta,w,a) (ACh*Cl) * ((theta.*w) * a);
   updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
   
-  % after new updating func
-%  syn.EC3(:,1) = (1 - pha.AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage)); % fix one minus
-%  syn.CA3(:,1) = (1 - pha.AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
-  
   syn.EC3(:,1) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
   syn.CA3(:,1) = updateCA3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
 
+  % initialize CA1 activity
   a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
 
   tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
@@ -132,17 +128,10 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
     pha.CA3(t) = pha.CA3(t-1) + p.phaseStep;  theta.CA3(t) = (p.thetaScale/2) * sin(pha.CA3(t)) + (1-(p.thetaScale/2));  % eq 2.3 p.799
     pha.LTP(t) = pha.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(pha.LTP(t));                                            % eq 2.5 p.799
     
-    %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
-    %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
-    
     % after the new updating function was written
     syn.EC3(:,t) = (pha.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
     syn.CA3(:,t) = (1 - pha.AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
-    % why does this break it?
-%     syn.EC3(:,t) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
-%     syn.CA3(:,t) = updateCA3(pha.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
-%     
     a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
 
     tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
@@ -153,7 +142,7 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   modCA3 = reshape(syn.CA3,2,[])';
   
   if 0
-    keyboard
+    keyboard;
     
     figure; hold on;
     time = linspace(0, 1000, size(reshape(syn.EC3,2,[])',1));
@@ -168,7 +157,7 @@ function [a,tempXprod, pha, theta] = runTheta(a,w,tempXprod,p,stage)
   
 end
 
-function plotStateVariables(theta,a,pha,trl)
+function plotStateVariables_old(theta,a,pha,trl)
     figure;
     subplot(4,1,1);
     hold off; plot(theta.EC)
@@ -189,6 +178,48 @@ function plotStateVariables(theta,a,pha,trl)
     subplot(4,1,4);
     plot(pha.AChLvls)
     ylabel('Ach');
+end
+
+function plotStateVariables(theta,a,pha,trl,t)
+    figure;
+    subplot(3,1,1); 
+    plot(t,a.CA1','LineWidth',3);
+    title('ACh-Theta Model Output','FontSize',16);
+    ylabel('a_{CA1}\it(t) \rm(AU)','FontSize',14);
+    yticks([-.2 0 .5]); xticks([0 .5 1]);
+    
+    subplot(3,1,2);
+    plot(t,theta.LTP,'LineWidth',3)
+    ylabel('\theta_{LTP} \rm(AU)','FontSize',14);
+    xticks([0 .5 1]);
+    
+    subplot(3,1,3);
+    plot(t,pha.AChLvls,'LineWidth',3)
+    ylabel('\bf\psi\rm\it(t) \rm(AU)','FontSize',14); 
+    xlabel('Time (s)','FontSize',14);
+    xticks([0 .5 1]);
+    
+end
+
+function plotRegionAct(EC, CA3, t)
+
+figure; 
+subplot(1,2,1);
+plot(t,EC, 'r','LineWidth',3)
+title('EC Activity', 'FontSize',16)
+xlabel('Time (s)','FontSize',14); ylabel('Activity (AU)', 'FontSize',14);
+yticks([0 .5]); xticks([0 .5 1]);
+ax = gca; ax.FontSize = 12; 
+
+
+
+subplot(1,2,2);
+plot(t,CA3, 'b','LineWidth',3)
+title('CA3 Activity', 'FontSize',16)
+xlabel('Time (s)','FontSize',14); ylabel('Activity (AU)', 'FontSize',14);
+yticks([0 .5]); xticks([0 .5 1]);
+ax = gca; ax.FontSize = 12; 
+
 end
 
 function y = sigmoid(x)
