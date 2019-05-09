@@ -100,7 +100,7 @@ dwAccE.CA3 = zeros(2,3);
 dwAccR.CA3 = zeros(2,3);
 dwAcc.CA3 = zeros(2,3);
 
-verbose = 1; % do you wanna see plots? 
+verbose = 0; % do you wanna see plots? 
 plt = 0; % do you want to see other plots? 
 
 

@@ -1,4 +1,4 @@
-function hasselmo2002_Task_V3_saddle_failDemo()
+function hasselmo2002_Task_V3_saddle_working_v4()
 % hasselmo_2002 theta model
 tic
 N = 20; % 50 @ 48 seconds
@@ -6,13 +6,16 @@ saddleMat = nan(N,N);
 X_CA3 = linspace(0,2*pi,N);
 X_EC = linspace(0,2*pi,N);
 
-runTest = 0;
 %figure('position', [1 1 1043 788]);   
 
 nTrls = [5]; %[1 2 3 4]
 for nTrl_i = 1:length(nTrls)
   nTrls_P = nTrls(nTrl_i);
-  if runTest; runOne(X_EC(N/2), X_CA3(1), nTrls_P); end
+  
+  if 1
+  runOne(X_EC(N/2), X_CA3(1), nTrls_P);
+  keyboard;
+  end
   
   fprintf('%i:',length(X_EC));
   for i = 1:length(X_EC)
@@ -44,20 +47,22 @@ for nTrl_i = 1:length(nTrls)
 % ylim([0 2*pi])
 
 figure%(99); 
-nR = 4; nC = length(nTrls); 
-subplotbyind(nC,nR,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 1']); colormap('winter');
-subplotbyind(nC,nR,nTrl_i,2); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 2']); colormap('winter');
-subplotbyind(nC,nR,nTrl_i,3); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 3']); colormap('winter');
-subplotbyind(nC,nR,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter');
+nR = length(nTrls); nC = 4; 
+subplotbyind(nR,nC,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);title(['trls = ' num2str(nTrls_P)]);
+subplotbyind(nR,nC,nTrl_i,2); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nR,nC,nTrl_i,3); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
+subplotbyind(nR,nC,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 
 %figure;surf(X,Y,squeeze(Ms(4,:,:))); xlabel('ECph'); ylabel('CA3ph'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]);
 end
 
-if 0
-    figure; surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
-    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter'); 
+if 1
+    figure;
+    surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
+    view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title([' Model Stage 4 / Test']);
+    colormap('winter')
 end
-
+    
 toc
 keyboard; 
 end
@@ -70,13 +75,15 @@ runMidTests = true; %DONT TURN THIS OFF!
 %clear all;
 
 %% runtime parameters
-p.nTrls_trn = 1; % THis grows this exponentally
-p.nTrls_ext = 1; %  THis grows this exponentally
-p.nTrls_rev = nTrls_P; % THis grows this exponentally
+p.nTrls_trn = 1; % what does this mean?; THis grows this exponentally
+p.nTrls_ext = 0; % what does this mean?; THis grows this exponentally
+p.nTrls_rev = nTrls_P; % what does this mean?; THis grows this exponentally
 
 p.nCA1cells = 2;
 p.nCA3cells = 3;
 p.nECcells = 2;
+
+p.nCycles = 1; % How many cycles would we like per trial. Default = 6? 
 
 p.dt = 0.005; % 5 ms
 p.thF = 8; % 8 Hz
@@ -85,7 +92,7 @@ p.nTSteps = p.stepsPerCycle;
 p.phaseStep = (2*pi)/p.stepsPerCycle; % numnber of radians to increment theta phase by for each time steps
 p.k = 1;
 p.k2 = 1;
-p.lrate = 8; %0.02; % learning rate, per Ehren's suggested experiment
+p.lrate = 0; %0.02; % learning rate, per Ehren's suggested experiment
 p2 = p; 
 p2.lrate = 8; % copy for the acc updates
 
@@ -101,7 +108,6 @@ a.CA3 = nan(p.nCA3cells);
 a.EC  = nan(p.nECcells);
 w.CA3 = ones(p.nCA1cells, p.nCA3cells); % .* 0 
 w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
-
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 dwAccE.CA3 = zeros(2,3);
 dwAccR.CA3 = zeros(2,3);
@@ -120,6 +126,7 @@ plt = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 stage = 1;
+if false
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%         Initial training             %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -128,17 +135,31 @@ stage = 1;
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 for trl = 1:p.nTrls_trn
   % initialize first timestep
+  % NOTE: THESE NEED TO BE SET FOR EACH PHASE OF THE TASK, TRL
   a.CA3(:,1) = [1; 1; 0;]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1) = [1; 0];
+  
   
   % runs the model 
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
   
+  if verbose
+    fprintf('\nTrial %i\n',trl);
+    disp('CA1 Activity');
+    a.CA1
+    a.CA1(1:2,end)
+  end
+  
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3)*p.dt;
   dwAcc.CA3(:,:) = dwAcc.CA3(:,:) + sum(tempXprod,3)*p.dt;
+
+  if any(isnan(dw.CA3)), keyboard, end
+  %w.CA3, dw.CA3
   w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 end
+
+
 
 if runMidTests
 a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
@@ -146,11 +167,11 @@ a.EC(:,1) = [0; 0];
 [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
 if plt, figure(43); plotStateVariables(theta,a,'Initial Learning'); end
 end
-
-
-%ilW = p.k2;
-%w.CA3 = [ilW ilW 0; 0 0 0];
-%w.CA3_init = w.CA3;
+if plt, figure(42); plotStateVariables(theta,a,'Initial Learning'); end
+end
+ilW = p.k2;
+w.CA3 = [ilW ilW 0; 0 0 0];
+w.CA3_init = w.CA3;
 Ms(1) = score(a,[0 1]');
 
    
@@ -165,13 +186,23 @@ for trl = 1:p.nTrls_ext
   a.CA3(:,1) = [1; 1; 0]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1)  = [0; 0]; % rand(p.nECcells, 1) > .5;
   
+  
   % runs the model 
   [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
- 
+  
+  if verbose
+    fprintf('\nTrial %i\n',trl);
+    disp('CA1 Activity');
+    a.CA1
+    a.CA1(1:2,end)
+  end
   
   % compute weight updates after each theta cycle
   dw.CA3(:,:) = sum(tempXprod,3)*p.dt;
   dwAccE.CA3(:,:) = dwAccE.CA3(:,:) + sum(tempXprod,3)*p.dt;
+
+  
+  if any(isnan(dw.CA3)), keyboard, end
   w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 end
 
@@ -179,10 +210,10 @@ if runMidTests
 a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
 a.EC(:,1) = [0; 0];
 [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-if plt, figure(54); plotStateVariables(theta,a,'Error Reversal'); end
 end
-
+if plt, figure(54); plotStateVariables(theta,a,'Error Reversal'); end
 Ms(2) = score(a,[0 1]');
+figure(42); plotStateVariables(theta,a,ph,'Initial Learning');
 
 %% Phase Three
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -215,7 +246,6 @@ for trl = 1:p.nTrls_rev
   w.CA3 = update_wCA3(w.CA3,dw.CA3,p);
 
 end
-
 if runMidTests
   a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
   a.EC(:,1) = [0; 0];
@@ -223,9 +253,6 @@ if runMidTests
   if plt, plotStateVariables(theta,a,'Correct Reversal'); end
 end
 Ms(3) = score(a,[0 1]');
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%  Test out effects of diff. learning   %%%%%%%%%%%%%%%%%
@@ -234,46 +261,49 @@ Ms(3) = score(a,[0 1]');
 
 % apply accumulated weight changes
 dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
-w.CA3 = update_wCA3(w.CA3,dwAccE.CA3,p2);
+w.CA3 = update_wCA3(w.CA3_init,dwAccE.CA3,p2);
 
-a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-a.EC(:,1) = [0; 0];
-[a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-
-Ms(4) = score(a,[0 1]'); 
+if runMidTests
+  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+  a.EC(:,1) = [0; 0];
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+end
+Ms(4) = score(a,[0 1]');
 
 
 if 0
-    % apply accumulated weight changes
-    dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
-    w.CA3 = update_wCA3(w.CA3,dwAccR.CA3,p2);
+% apply accumulated weight changes
+dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
+w.CA3 = update_wCA3(w.CA3_init,dwAccR.CA3,p2);
 
-    if runMidTests
-      a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-      a.EC(:,1) = [0; 0];
-      [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-      if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-    end
-    Ms(3) = score(a,[0 1]');
+if runMidTests
+  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+  a.EC(:,1) = [0; 0];
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+end
+Ms(3) = score(a,[0 1]');
+end
 
 
+if 0
+% apply accumulated weight changes
+dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
+w.CA3 = update_wCA3(w.CA3_init,dwAcc.CA3,p2);
 
-    % apply accumulated weight changes
-    dwAcc.CA3 = dwAccE.CA3 + dwAccR.CA3;
-    w.CA3 = update_wCA3(w.CA3,dwAcc.CA3,p2);
-
-    if runMidTests
-      a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
-      a.EC(:,1) = [0; 0];
-      [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
-      if plt, plotStateVariables(theta,a,'Correct Reversal'); end
-    end
-    Ms(4) = score(a,[0 1]');
+if runMidTests
+  a.CA3(:,1) = [1; 1; 1]; % rand(p.nCA3cells,1) > .5;
+  a.EC(:,1) = [0; 0];
+  [a, tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage);
+  if plt, plotStateVariables(theta,a,'Correct Reversal'); end
+end
+Ms(4) = score(a,[0 1]');
 end
 
 Mhat = score(a,[0 1]');  
-
+  
+  
 end
 
 
@@ -291,7 +321,18 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage)
   ph.LTP(1) = 0;       theta.LTP(1) = sin(ph.LTP(1)); 
   
   % initialize CA1 activity
-  a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
+  % a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
+  AchPut = linspace(-10,10,p.nCycles*p.stepsPerCycle);
+  ph.AChLvls = sigmoid(AchPut);
+  
+  Cr = 1; Cl = .5; % These need to be updated to control for individual dynamics in CA3 vs EC 
+  updateEC3 = @(ACh,Cl,theta,w,a) (ACh*Cl) * ((theta.*w) * a);
+  updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
+  
+  syn.EC3(:,1) = updateEC3(ph.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
+  syn.CA3(:,1) = updateCA3(ph.AChLvls(1),Cr,theta.CA3(1),w.CA3,a.CA3(:,stage));
+
+  a.CA1(:,1) = syn.EC3(:,1) + syn.CA3(:,1); % eq 2.4 p.799
   
   %if any(a.CA1<0); keyboard; end
   tempXprod(:,:,1) = (theta.LTP(1) .* a.CA1(:,1)) * a.CA3(:,stage)';
@@ -305,10 +346,14 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,EC_TP,CA3_TP,stage)
     
     
     %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
-    a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
+    %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
+    
+    syn.EC3(:,t) = (ph.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
+    syn.CA3(:,t) = (1 - ph.AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
     %a.CA1(:,t) = min(max(a.CA1(:,t),[0;0]),[1;1]); % set to cap the ca1 activity (doesn't work)
     
+    a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
     
     tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)'; %2.9
     
@@ -334,29 +379,36 @@ switch(vers)
   case 2
     M = max(TARG'*a.CA1 - (1-TARG)' * a.CA1);
   case 3
-    M = (mean(a.CA1,2)' * TARG) - (mean(a.CA1,2)' * (1-TARG));
+    M = TARG'*mean(a.CA1,2) - (1-TARG)' * mean(a.CA1,2);
   case 4
     M = 0;
-  case 5
-    M = a.CA1 * TARG - (1-TARG) * a.CA1;
 end
 % M = sum(TARG - CA1_A);
-% ([1 0] * TARG) - ([1 0] * (1-TARG))
 end
 
-function plotStateVariables(theta,a,t)
-    subplot(3,1,1);
+function y = sigmoid(x)
+y = 1.0 ./ (1 + exp(-x));
+end
+
+function plotStateVariables(theta,a,ph,trl)
+    figure;
+    subplot(4,1,1);
     hold off; plot(theta.EC)
     hold on; plot(theta.CA3)
     ylabel('theta.CA3');
     legend('EC','CA3'); ylim([0 1]);
-    title(['Plot: ', t]);
+    %title(['End of training']);
+    title(['trl ', num2str(trl)])
     
-    subplot(3,1,2);
+    subplot(4,1,2);
     plot(a.CA1');
     ylabel('act CA1');
     
-    subplot(3,1,3);
+    subplot(4,1,3);
     plot(theta.LTP)
     ylabel('theta LTP');
+    
+    subplot(4,1,4);
+    plot(ph.AChLvls)
+    ylabel('Ach');
 end
