@@ -90,6 +90,19 @@ if 1
     plotRegionAct(syn.EC3(1,:), syn.CA3(2,:),p.time);
 end
 
+
+if 0 % crosses may be indicative of the results found in colgin et al 2009
+   figure; 
+   subplot(2,1,1);
+   hold on;
+   plot(p.time,syn.EC3(1,:))
+   plot(p.time,syn.CA3(2,:))
+   
+   subplot(2,1,2);
+   plot(p.time,theta.LTP)
+   
+end
+
 keyboard;
 end 
 
@@ -189,17 +202,18 @@ function plotStateVariables(theta,a,pha,trl,t)
     yticks([-.2 0 .5]); xticks([0 .5 1]);
     ax = gca; ax.FontSize = 12;
     
-    subplot(3,1,2);
-    plot(t,theta.LTP,'LineWidth',3)
-    ylabel('\theta_{LTP} \rm(AU)','FontSize',14);
-    yticks([-1 0 1]); xticks([0 .5 1]);
-    ax = gca; ax.FontSize = 12;
     
-    subplot(3,1,3);
+    subplot(3,1,2);
     plot(t,pha.AChLvls,'LineWidth',3)
     ylabel('\bf\psi\rm\it(t) \rm(AU)','FontSize',14); 
     xlabel('Time (s)','FontSize',14);
     yticks([0 1]); xticks([0 .5 1]);
+    ax = gca; ax.FontSize = 12;
+    
+    subplot(3,1,3);
+    plot(t,theta.LTP,'LineWidth',3)
+    ylabel('\theta_{LTP} \rm(AU)','FontSize',14);
+    yticks([-1 0 1]); xticks([0 .5 1]);
     ax = gca; ax.FontSize = 12;
     
 end
