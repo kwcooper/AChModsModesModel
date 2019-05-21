@@ -27,7 +27,7 @@ for part = iter
         p.CA3 = X_CA3(j);
         p.LTP = X_EC(i);
         X = 1; % X = K = 1 % this should change the amplitude of the preformance measure
-        K = 5; % see above
+        K = 1; % see above
 
         switch(part)
             case 1
@@ -50,7 +50,7 @@ for part = iter
 
 end
 
-figure;
+figure('position', [1 1 875 245]);
 names = ["EC Part", "CA3 part", "Whole F(x)"];
 for sPi = iter
     subplot(1,length(iter),sPi);
@@ -59,8 +59,8 @@ for sPi = iter
     xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M')
     title(names(sPi)); 
     view([45 60]); 
-    xlim([0 360]); ylim([0 360]);
-    xticks([0 180 360]); yticks([0 180 360]);
+    xlim([0 360]); ylim([0 360]); zlim([-5 3]);
+    xticks([0 180 360]); yticks([0 180 360]); zticks([-3 0 3]);
     %xlim([0 2*pi]); ylim([0 2*pi]);
     colormap('winter')
 end
