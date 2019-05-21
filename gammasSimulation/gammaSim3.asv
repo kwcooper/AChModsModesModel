@@ -4,7 +4,7 @@ function gammaSim3()
 
 fs = 600;              % Sampling frequency (samples per second)
 dt = 1/fs;             % seconds per sample
-StopTime = 500;        % seconds (~100s to run successfully)
+StopTime = 1;        % seconds (~100s to run successfully)
 t = (0:dt:StopTime)';  % seconds
 
 
@@ -22,25 +22,28 @@ gScale = .3;
 signal = theta + gScale * (fGamma .* relu(theta)) + gScale * (sGamma .* relu(sgTheta));
 
 %%
-figure;
-numPlts = 4;
+figure('Position', [1 1 945 375]);
+numPlts = 3;
 subplot(numPlts,1,1)
-plot(t,theta); hold on; plot(t,sgTheta)
-ylabel('\theta''s','fontsize',14)
-
-subplot(numPlts,1,2)
 plot(t,gScale * (sGamma .* relu(-sin(2*pi*8*t+pi/2))))
 ylabel('Slow \gamma (CA3)','fontsize',11)
+title('Simulated LFP (intra-cycle)')
 
-subplot(numPlts,1,3)
+subplot(numPlts,1,2)
 plot(t,gScale * (fGamma .* relu(theta)))
 ylabel('Fast \gamma (EC)','fontsize',11)
 
-subplot(numPlts,1,4)
+subplot(numPlts,1,3)
 %plot(theta + gScale * (fGamma .* relu(theta)) + gScale * (sGamma .* relu(-theta)))
 plot(t,signal)
 ylabel('CA1 LFP','fontsize',11)
 xlabel('Time (S)','fontsize',11)
+
+if numPlts == 4
+  subplot(numPlts,1,4)
+  plot(t,theta); hold on; plot(t,sgTheta)
+  ylabel('\theta''s','fontsize',14)
+end
 
 
 %% Generate theta mod gamma figure
@@ -60,44 +63,54 @@ h = colorbar; ylabel(h, 'Power (\muV^{2})','rotation', 270, 'position', [2.7, 1.
 axis xy; 
 
 
-%% Thresholded gamma
+%% Thresholded gamma (Modes)
+
+
 
 rt = relu(theta);
-fgma = gScale * (fGamma .* rt);
+fgma = (fGamma .* rt);
 zrt = rt ~= 0;
 bw = buckWave(zrt);
 %figure; plot(fgma.*bw);
 fgmabw = fgma.*bw;
 
 rt2 = relu(-sin(2*pi*8*t+pi/2));
-sgma = gScale * (sGamma .* rt2);
+sgma = (sGamma .* rt2);
 zrt2 = rt2 ~= 0;
 bw2 = buckWave(zrt2);
 %figure; plot(sgma.*bw2);
 sgmabw = sgma.*(1 - bw2); % flip bw2 so that they are offset
 
+gScale = .3;
 signal2 = theta + gScale * (fgmabw .* relu(theta)) + gScale * (sgmabw .* relu(sgTheta));
 
 
-figure; hold on;
-numPlts = 4;
+
+figure('Position', [1 1 945 375]); 
+%hold on;
+numPlts = 3;
 subplot(numPlts,1,1);
-plot(t,theta); hold on; plot(t,sgTheta);
-ylabel('\theta''s','fontsize',14);
+plot(t,(gScale * sgmabw));
+ylabel('Slow \gamma (CA3)','fontsize',11);
+xaxis([0 1])
+title('Simulated LFP (modes)')
 
 subplot(numPlts,1,2);
-plot(t,sgmabw);
-ylabel('Slow \gamma (CA3)','fontsize',11);
-
-subplot(numPlts,1,3);
-plot(t,fgmabw);
+plot(t,(gScale * fgmabw));
 ylabel('Fast \gamma (EC)','fontsize',11);
 
-subplot(numPlts,1,4)
+subplot(numPlts,1,3);
 %plot(theta + gScale * (fGamma .* relu(theta)) + gScale * (sGamma .* relu(-theta)))
 plot(t,signal2)
 ylabel('CA1 LFP','fontsize',11)
 xlabel('Time (S)','fontsize',11)
+
+if numPlts == 4
+  subplot(numPlts,1,4)
+  plot(t,theta); hold on; plot(t,sgTheta);
+  ylabel('\theta''s','fontsize',14);
+end
+
 
 %% Generate theta mod gamma figure
 
@@ -127,7 +140,7 @@ y = max(0,x);
 end
 
 function buckedWave = buckWave(wave)
-% Takes a positive square wave, bucks 
+% Takes a positive square wave, bucks
 
 zrt = wave;
 inds1 = find(diff(zrt)==1);
