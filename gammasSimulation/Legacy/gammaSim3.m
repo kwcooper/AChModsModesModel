@@ -27,17 +27,21 @@ numPlts = 3;
 subplot(numPlts,1,1)
 plot(t,gScale * (sGamma .* relu(-sin(2*pi*8*t+pi/2))))
 ylabel('Slow \gamma (CA3)','fontsize',11)
+xticks([0 1]);
 title('Simulated LFP (intra-cycle)')
 
 subplot(numPlts,1,2)
 plot(t,gScale * (fGamma .* relu(theta)))
 ylabel('Fast \gamma (EC)','fontsize',11)
+xticks([0 1]);
+
 
 subplot(numPlts,1,3)
 %plot(theta + gScale * (fGamma .* relu(theta)) + gScale * (sGamma .* relu(-theta)))
 plot(t,signal)
 ylabel('CA1 LFP','fontsize',11)
 xlabel('Time (S)','fontsize',11)
+xticks([0 1]);
 
 if numPlts == 4
   subplot(numPlts,1,4)
@@ -92,18 +96,20 @@ numPlts = 3;
 subplot(numPlts,1,1);
 plot(t,(gScale * sgmabw));
 ylabel('Slow \gamma (CA3)','fontsize',11);
-xaxis([0 1])
+xticks([0 1]);
 title('Simulated LFP (modes)')
 
 subplot(numPlts,1,2);
 plot(t,(gScale * fgmabw));
 ylabel('Fast \gamma (EC)','fontsize',11);
+xticks([0 1]);
 
 subplot(numPlts,1,3);
 %plot(theta + gScale * (fGamma .* relu(theta)) + gScale * (sGamma .* relu(-theta)))
 plot(t,signal2)
 ylabel('CA1 LFP','fontsize',11)
 xlabel('Time (S)','fontsize',11)
+xticks([0 1]);
 
 if numPlts == 4
   subplot(numPlts,1,4)
