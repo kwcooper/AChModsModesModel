@@ -8,7 +8,7 @@ X_EC = linspace(0,2*pi,N);
 
 runTest = 0;
 %figure('position', [1 1 1043 788]);   
-figure;
+figure('position', [1 1 809 620]);
 nTrls = [2,4,6,8]; %[1 2 3 4]
 for nTrl_i = 1:length(nTrls)
   nTrls_P = nTrls(nTrl_i);
@@ -44,7 +44,7 @@ for nTrl_i = 1:length(nTrls)
 % ylim([0 2*pi])
 
 nR = 4; nC = length(nTrls); 
-subplotbyind(nC,nR,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 1']); colormap('winter');
+subplotbyind(nC,nR,nTrl_i,1); surf(X,Y,squeeze(Ms(1,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel({['T= ', num2str(nTrls(nTrl_i))];'M'}); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 1']); colormap('winter');
 subplotbyind(nC,nR,nTrl_i,2); surf(X,Y,squeeze(Ms(2,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 2']); colormap('winter');
 subplotbyind(nC,nR,nTrl_i,3); surf(X,Y,squeeze(Ms(3,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 3']); colormap('winter');
 subplotbyind(nC,nR,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter');
@@ -53,7 +53,8 @@ subplotbyind(nC,nR,nTrl_i,4); surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); y
 end
 
 if 0
-    figure; surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
+    figure; 
+    surf(X,Y,squeeze(Ms(4,:,:))); xlabel('\Phi EC'); ylabel('\Phi CA3'); zlabel('M'); 
     view([45 60]); xlim([0 2*pi]); ylim([0 2*pi]); title(['Stage 4 / Test']); colormap('winter'); 
 end
 
@@ -70,8 +71,8 @@ runMidTests = true; %DONT TURN THIS OFF!
 
 %% runtime parameters
 p.nTrls_trn = 1; % THis grows this exponentally
-p.nTrls_ext = 1; %  THis grows this exponentally
-p.nTrls_rev = nTrls_P; % THis grows this exponentally
+p.nTrls_ext = nTrls_P; %  THis grows this exponentally
+p.nTrls_rev = 1; % THis grows this exponentally (just change trials on this?)
 
 p.nCA1cells = 2;
 p.nCA3cells = 3;
