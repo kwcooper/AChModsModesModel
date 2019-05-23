@@ -87,8 +87,7 @@ a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
 trl = 0;
 if 1
     plotStateVariables(theta,a,pha, trl,p.time); 
-    %plotRegionAct(syn.EC3(1,:), syn.CA3(2,:),p.time); pha
-    plotRegionActACh(syn.EC3(1,:), syn.CA3(2,:),pha,p.time);
+    plotRegionAct(syn.EC3(1,:), syn.CA3(2,:),p.time);
 end
 
 
@@ -242,7 +241,7 @@ end
 
 function plotRegionActACh(EC, CA3, pha, t)
 
-figure('position',[1 1 809 278]); 
+figure; 
 subplot(2,2,1);
 plot(t,EC, 'r','LineWidth',3)
 title('EC Activity', 'FontSize',16)
@@ -250,6 +249,8 @@ title('EC Activity', 'FontSize',16)
 ylabel('Activity (AU)', 'FontSize',14);
 yticks([0 .5]); xticks([0 .5 1]);
 ax = gca; ax.FontSize = 12; 
+
+
 
 subplot(2,2,2);
 plot(t,CA3, 'b','LineWidth',3)
