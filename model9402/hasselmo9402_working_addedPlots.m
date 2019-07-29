@@ -124,7 +124,7 @@ function [a,tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage)
   pha.AChLvls = sigmoid(AchPut);
   % .64 C_theta (equ 5) Cr = .8 Cl = ? 
   Cr = 1; Cl = .5; % These need to be updated to control for individual dynamics in CA3 vs EC 
-  updateEC3 = @(ACh,Cl,theta,w,a) (ACh*Cl) * ((theta.*w) * a);
+  updateEC3 = @(ACh,Cl,theta,w,a) (1 - ACh*Cl) * ((theta.*w) * a);
   updateCA3 = @(ACh,Cr,theta,w,a) (1 - ACh*Cr) * ((theta.*w) * a);
   
   syn.EC3(:,1) = updateEC3(pha.AChLvls(1),Cl,theta.EC(1),w.EC,a.EC(:,stage));
@@ -143,7 +143,7 @@ function [a,tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage)
     pha.LTP(t) = pha.LTP(t-1) + p.phaseStep;  theta.LTP(t) = sin(pha.LTP(t));                                            % eq 2.5 p.799
     
     % after the new updating function was written
-    syn.EC3(:,t) = (pha.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
+    syn.EC3(:,t) = (1 - pha.AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
     syn.CA3(:,t) = (1 - pha.AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
     a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
