@@ -1,5 +1,5 @@
 function [] = hasselmo9402_working_addedPlots()
-% hasselmo_2002 theta model
+% hasselmo_9402 theta model
 
 
 %todo: 
@@ -17,7 +17,7 @@ clear all;
 dbstop if error;
 
 %% runtime parameters
-p.nTrls = 1;
+p.nTrls = 2;
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;

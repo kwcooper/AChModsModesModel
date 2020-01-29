@@ -1,5 +1,5 @@
-function [] = hasselmo9402_working_addedPlots()
-% hasselmo_2002 theta model
+function [] = model9402_()
+% 9402 theta model 2020 Updates
 
 
 %todo: 
@@ -17,7 +17,7 @@ clear all;
 dbstop if error;
 
 %% runtime parameters
-p.nTrls = 1;
+p.nTrls = 5;
 p.nTSteps = 25;
 p.nCA1cells = 2;
 p.nCA3cells = 3;
@@ -85,24 +85,13 @@ fprintf('Test initial learning\n');
 a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
 [a, tempXprod, pha, theta, syn] = runTheta(a,w,tempXprod,p,stage);
 trl = 0;
+
 if 1
     plotStateVariables(theta,a,pha, trl,p.time); 
     %plotRegionAct(syn.EC3(1,:), syn.CA3(2,:),p.time); pha
     plotRegionActACh(syn.EC3(1,:), syn.CA3(2,:),pha,p.time);
 end
 
-
-if 0 % crosses may be indicative of the results found in colgin et al 2009
-   figure; 
-   subplot(2,1,1);
-   hold on;
-   plot(p.time,syn.EC3(1,:))
-   plot(p.time,syn.CA3(2,:))
-   
-   subplot(2,1,2);
-   plot(p.time,theta.LTP)
-   
-end
 
 %keyboard;
 end 
