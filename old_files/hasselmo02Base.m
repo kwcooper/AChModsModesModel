@@ -32,7 +32,7 @@ p.thetaScale = 1; % X from Hasselmo et al (2002), p 799
 a.CA1 = nan(p.nCA1cells,p.nTSteps);
 a.CA3 = nan(p.nCA3cells,p.nTrls); 
 a.EC  = nan(p.nECcells, p.nTrls);
-w.CA3 = eye(p.nCA1cells, p.nCA3cells);
+w.CA3 = zeros(p.nCA1cells, p.nCA3cells);
 w.EC  = eye(p.nCA1cells, p.nECcells); % identity matrix p.801
 tempXprod = nan(p.nCA1cells,p.nCA3cells,p.stepsPerCycle);
 
@@ -66,7 +66,7 @@ end
 
 if 1, plotStateVariables(theta,a); end
 
-  %keyboard
+  keyboard
 
   fprintf('Test initial learning\n');  
   a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
@@ -90,7 +90,7 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
   % initialize CA1 activity
   %a.CA1(:,1) = ((theta.EC(1) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(1) .* w.CA3) * a.CA3(:,1)); % eq 2.4 p.799
   nCycles = 6;
-  AChLvls = linspace(1,0,nCycles*p.stepsPerCycle); Cr = 1; Cl = 1; % high ach to low ach
+  AChLvls = linspace(0,1,nCycles*p.stepsPerCycle);
   syn.EC3(:,1) = (1 - AChLvls(1)*Cl) * ((theta.EC(1) .* w.EC) * a.EC(:,stage));
   syn.CA3(:,1) = (1 - AChLvls(1)*Cr) * ((theta.CA3(1) .* w.CA3) * a.CA3(:,stage));
   
@@ -108,7 +108,7 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
     
     %a.CA1 = w.EC .* a.EC + w.CA3 .* a.CA3; % eq 2.1
     %a.CA1(:,t) = ((theta.EC(t) .* w.EC) * a.EC(:,stage)) + ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage)); % eq 2.4 p.799
-    syn.EC3(:,t) = (AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
+    syn.EC3(:,t) = (1 - AChLvls(t)*Cl) * ((theta.EC(t) .* w.EC) * a.EC(:,stage));
     syn.CA3(:,t) = (1 - AChLvls(t)*Cr) * ((theta.CA3(t) .* w.CA3) * a.CA3(:,stage));
     
     a.CA1(:,t) = syn.EC3(:,t) + syn.CA3(:,t); % eq 2.4 p.799
@@ -117,12 +117,6 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
     
   end
   
-  if 0
-    %keyboard;
-    figure;plot(reshape(syn.EC3,2,[])'); hold on;
-   plot(reshape(syn.CA3,2,[])')
-  end
- 
 end
 
 function plotStateVariables(theta,a)
