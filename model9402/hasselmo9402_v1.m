@@ -66,7 +66,7 @@ end
 
 if 1, plotStateVariables(theta,a); end
 
-  keyboard
+  %keyboard
 
   fprintf('Test initial learning\n');  
   a.CA3(:,1) = [0; 1; 0]; % rand(p.nCA3cells,1) > .5;
@@ -116,9 +116,12 @@ function [a,tempXprod, ph, theta] = runTheta(a,tempXprod,w,p,stage)
     tempXprod(:,:,t) = (theta.LTP(t) .* a.CA1(:,t)) * a.CA3(:,stage)';
     
   end
-  keyboard
+  
+  if 0
+    %keyboard;
     figure;plot(reshape(syn.EC3,2,[])'); hold on;
    plot(reshape(syn.CA3,2,[])')
+  end
  
 end
 
